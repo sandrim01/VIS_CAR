@@ -160,7 +160,7 @@ const renderApp = () => {
               ${total === 0 ? '<tr><td colspan="7" style="text-align: center; padding: 4rem; color: var(--text-muted);">Nenhum laudo emitido até o momento.</td></tr>' : ''}
               ${reports.map(r => `
                 <tr>
-                  <td style="font-size: 0.75rem;">${new Date(r.created_at).toLocaleString()}</td>
+                  <td style="font-size: 0.75rem;">${r.created_at || r.timestamp ? new Date(r.created_at || r.timestamp).toLocaleString() : 'N/A'}</td>
                   <td style="font-weight: 700; color: #fff;">${r.model}</td>
                   <td>${r.owner}</td>
                   <td><span style="font-family: monospace;">${r.plate}</span></td>
@@ -844,7 +844,7 @@ const showReportDetails = (id) => {
           <button id="print-pdf-btn" class="btn btn-primary" style="background: #000; color: #fff; border-radius: 4px; padding: 0.75rem 1.5rem;">
             <i class="fas fa-file-pdf"></i> EXPORTAR LAUDO COMPLETO (PDF)
           </button>
-          <div style="font-size: 0.65rem; font-weight: 850; background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 4px;">DATA DE EMISSÃO: ${new Date(report.created_at).toLocaleString()}</div>
+          <div style="font-size: 0.65rem; font-weight: 850; background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 4px;">DATA DE EMISSÃO: ${report.created_at || report.timestamp ? new Date(report.created_at || report.timestamp).toLocaleString() : 'Data N/A'}</div>
         </div>
       </div>
 
@@ -935,21 +935,21 @@ const showReportDetails = (id) => {
       <div style="margin-top: 5rem; padding-top: 3rem; border-top: 2px solid #000; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; align-items: flex-end;">
          <div style="text-align: center; border-top: 1px solid #000; padding-top: 1rem;">
             <p style="font-size: 0.6rem; color: #94a3b8; font-weight: 800; margin-bottom: 3.5rem; text-transform: uppercase;">Assinatura do Vistoriador</p>
-            <div style="font-size: 0.8rem; font-weight: 700; color: #000;">${report.inspector.name}</div>
-            <div style="font-size: 0.6rem; color: #64748b;">CPF: ***.***.***-**</div>
-         </div>
-         
-         <div style="text-align: center; border-top: 1px solid #000; padding-top: 1rem;">
-            <p style="font-size: 0.6rem; color: #94a3b8; font-weight: 800; margin-bottom: 3.5rem; text-transform: uppercase;">Assinatura do Proprietário / Responsável</p>
-            <div style="font-size: 0.8rem; font-weight: 700; color: #000;">${report.owner}</div>
-            <div style="font-size: 0.6rem; color: #64748b;">DOC: ${maskData(report.cpf, 'CPF')}</div>
-         </div>
+             <div style="font-size: 0.8rem; font-weight: 700; color: #000;">${report.inspector?.name || 'Vistoriador N/A'}</div>
+             <div style="font-size: 0.6rem; color: #64748b;">ID: ${report.inspector?.id || 'ID N/A'}</div>
+          </div>
+          
+          <div style="text-align: center; border-top: 1px solid #000; padding-top: 1rem;">
+             <p style="font-size: 0.6rem; color: #94a3b8; font-weight: 800; margin-bottom: 3.5rem; text-transform: uppercase;">Assinatura do Proprietário / Responsável</p>
+             <div style="font-size: 0.8rem; font-weight: 700; color: #000;">${report.owner || 'N/A'}</div>
+             <div style="font-size: 0.6rem; color: #64748b;">DOC: ${report.cpf ? maskData(report.cpf, 'CPF') : 'N/A'}</div>
+          </div>
 
-         <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-top: 1rem;">
-            <div style="font-family: monospace; font-size: 0.55rem; color: #64748b; line-height: 1.6; text-align: left; margin-bottom: 1rem; width: 100%;">
-                <p style="font-weight: 900; color: #000; margin-bottom: 0.3rem;">HASH DE AUTENTICIDADE</p>
-                <span style="word-break: break-all;">${report.hash}</span>
-            </div>
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-top: 1rem;">
+             <div style="font-family: monospace; font-size: 0.55rem; color: #64748b; line-height: 1.6; text-align: left; margin-bottom: 1rem; width: 100%;">
+                 <p style="font-weight: 900; color: #000; margin-bottom: 0.3rem;">HASH DE AUTENTICIDADE</p>
+                 <span style="word-break: break-all;">${report.hash || 'N/A'}</span>
+             </div>
             <div style="width: 100px; height: 100px; background: #fff; border: 1.5px solid #000; padding: 0.5rem; border-radius: 4px; display: grid; place-items: center;">
                <i class="fas fa-qrcode fa-4x" style="opacity: 0.05;"></i>
             </div>
