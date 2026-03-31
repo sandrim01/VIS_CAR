@@ -9,8 +9,10 @@ fontAwesome.crossOrigin = 'anonymous';
 document.head.appendChild(fontAwesome);
 
 let reports = [];
+let users = [];
 let activeSection = 'dashboard';
 let isLoaded = false;
+let usersLoaded = false;
 
 const fetchReports = async () => {
   try {
@@ -20,6 +22,17 @@ const fetchReports = async () => {
     renderApp();
   } catch (err) {
     console.error('Erro ao buscar relatórios:', err);
+  }
+};
+
+const fetchUsers = async () => {
+  try {
+    const response = await fetch('/api/users');
+    users = await response.json();
+    usersLoaded = true;
+    renderApp();
+  } catch (err) {
+    console.error('Erro ao buscar usuários:', err);
   }
 };
 
@@ -36,6 +49,10 @@ const renderApp = () => {
   if (!isLoaded) {
     fetchReports();
     return;
+  }
+
+  if (!usersLoaded && activeSection === 'usuarios') {
+    fetchUsers();
   }
 
   const user = getCurrentUser();
@@ -190,7 +207,7 @@ const renderApp = () => {
       <div class="container animate-in">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
           <h3 style="font-size: 1.25rem; font-weight: 700;">Gestão de Acessos (RBAC)</h3>
-          <button class="btn btn-outline" style="font-size: 0.75rem;"><i class="fas fa-user-plus"></i> Novo Usuário</button>
+          <button id="new-user-btn" class="btn btn-outline" style="font-size: 0.75rem;"><i class="fas fa-user-plus"></i> Novo Usuário</button>
         </div>
         <div class="data-table-container">
           <table class="table">
@@ -204,20 +221,15 @@ const renderApp = () => {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td><div style="font-weight: 700; color: #fff;">Alê System</div></td>
-                <td><span style="font-family: monospace;">ADM-001</span></td>
-                <td>admin@vistoria.car</td>
-                <td><span class="badge badge-success" style="background: rgba(99,102,241,0.2); color: var(--accent);">ADMINISTRADOR</span></td>
-                <td><span class="badge badge-success">ATIVO</span></td>
-              </tr>
-              <tr>
-                <td><div style="font-weight: 700; color: #fff;">Carlos Perito</div></td>
-                <td><span style="font-family: monospace;">VST-245</span></td>
-                <td>carlos@vistoria.car</td>
-                <td><span class="badge badge-warning" style="background: rgba(94,234,212,0.1); color: #5eead4;">VISTORIADOR</span></td>
-                <td><span class="badge badge-success">ATIVO</span></td>
-              </tr>
+              ${users.map(u => `
+                <tr>
+                  <td><div style="font-weight: 700; color: #fff;">${u.name}</div></td>
+                  <td><span style="font-family: monospace;">${u.id}</span></td>
+                  <td>${u.email}</td>
+                  <td><span class="badge ${u.role === 'ADMINISTRADOR' ? 'badge-success' : 'badge-warning'}" style="${u.role === 'ADMINISTRADOR' ? 'background: rgba(99,102,241,0.2); color: var(--accent);' : 'background: rgba(94,234,212,0.1); color: #5eead4;'}">${u.role}</span></td>
+                  <td><span class="badge badge-success">${u.status}</span></td>
+                </tr>
+              `).join('')}
             </tbody>
           </table>
         </div>
@@ -311,6 +323,67 @@ const renderApp = () => {
   document.querySelectorAll('.open-report').forEach(btn => {
     btn.onclick = () => showReportDetails(btn.dataset.id);
   });
+
+  if (activeSection === 'usuarios') {
+    const newUserBtn = document.getElementById('new-user-btn');
+    if (newUserBtn) {
+      newUserBtn.onclick = showNewUserModal;
+    }
+  }
+};
+
+const showNewUserModal = () => {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay animate-in';
+  modal.innerHTML = `
+      <div style="background: var(--bg-surface); padding: 2.5rem; border-radius: var(--radius-lg); max-width: 480px; width: 100%; border: 1px solid var(--border-medium);">
+         <h2 style="margin-bottom: 2rem; font-size: 1.25rem; font-weight: 800;">Cadastrar Sistema / Perito</h2>
+         <form id="new-user-form">
+            <div class="form-group"><label>Nome Completo</label><input type="text" id="user-name" required></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group"><label>ID (Código)</label><input type="text" id="user-id" placeholder="EX: VST-999" required></div>
+                <div class="form-group"><label>E-mail</label><input type="email" id="user-email" required></div>
+            </div>
+            <div class="form-group">
+                <label>Nível de Acesso</label>
+                <select id="user-role" style="width: 100%; height: 45px; background: var(--bg-elevated); border: 1px solid var(--border-medium); border-radius: 8px; color: #fff; padding: 0 1rem;">
+                    <option value="VISTORIADOR">VISTORIADOR</option>
+                    <option value="ADMINISTRADOR">ADMINISTRADOR</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="button" id="close-user-modal" class="btn btn-outline" style="flex: 1;">Cancelar</button>
+                <button type="submit" class="btn btn-primary" style="flex: 2;">Confirmar Cadastro</button>
+            </div>
+         </form>
+      </div>
+    `;
+  document.body.appendChild(modal);
+
+  document.getElementById('close-user-modal').onclick = () => modal.remove();
+  document.getElementById('new-user-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const newUser = {
+      id: document.getElementById('user-id').value.toUpperCase(),
+      name: document.getElementById('user-name').value,
+      email: document.getElementById('user-email').value,
+      role: document.getElementById('user-role').value,
+      status: 'ATIVO'
+    };
+
+    try {
+      await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser)
+      });
+      await fetchUsers();
+      modal.remove();
+    } catch (err) {
+      console.error('Erro ao salvar usuário:', err);
+      alert('Falha ao salvar usuário no banco.');
+    }
+  };
 };
 
 const showConsentModal = () => {
