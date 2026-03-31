@@ -160,7 +160,7 @@ const renderApp = () => {
               ${total === 0 ? '<tr><td colspan="7" style="text-align: center; padding: 4rem; color: var(--text-muted);">Nenhum laudo emitido até o momento.</td></tr>' : ''}
               ${reports.map(r => `
                 <tr>
-                  <td style="font-size: 0.75rem;">${new Date(r.timestamp).toLocaleString()}</td>
+                  <td style="font-size: 0.75rem;">${new Date(r.created_at).toLocaleString()}</td>
                   <td style="font-weight: 700; color: #fff;">${r.model}</td>
                   <td>${r.owner}</td>
                   <td><span style="font-family: monospace;">${r.plate}</span></td>
@@ -844,7 +844,7 @@ const showReportDetails = (id) => {
           <button id="print-pdf-btn" class="btn btn-primary" style="background: #000; color: #fff; border-radius: 4px; padding: 0.75rem 1.5rem;">
             <i class="fas fa-file-pdf"></i> EXPORTAR LAUDO COMPLETO (PDF)
           </button>
-          <div style="font-size: 0.65rem; font-weight: 850; background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 4px;">DATA DE EMISSÃO: ${new Date(report.timestamp).toLocaleString()}</div>
+          <div style="font-size: 0.65rem; font-weight: 850; background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 4px;">DATA DE EMISSÃO: ${new Date(report.created_at).toLocaleString()}</div>
         </div>
       </div>
 

@@ -31,7 +31,7 @@ const initDB = async () => {
     try {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS reports (
-                id UUID PRIMARY KEY,
+                id TEXT PRIMARY KEY,
                 plate TEXT NOT NULL,
                 model TEXT,
                 km TEXT,
@@ -43,7 +43,7 @@ const initDB = async () => {
                 score JSONB,
                 inspector JSONB,
                 hash TEXT,
-                timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
@@ -78,10 +78,10 @@ initDB();
 // API Routes
 app.get('/api/reports', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM reports ORDER BY timestamp DESC');
+        const result = await pool.query('SELECT * FROM reports ORDER BY created_at DESC');
         res.json(result.rows);
     } catch (err) {
-        console.error(err);
+        console.error('Error fetching reports:', err);
         res.status(500).json({ error: 'Database error' });
     }
 });
@@ -166,14 +166,16 @@ app.delete('/api/users/:id', async (req, res) => {
 app.post('/api/reports', async (req, res) => {
     const { id, plate, model, km, owner, cpf, chassi, checks, photos, score, inspector, hash, timestamp } = req.body;
     try {
+        console.log(`Attempting to save report: ${id} for plate: ${plate}`);
         await pool.query(
-            `INSERT INTO reports (id, plate, model, km, owner, cpf, chassi, checks, photos, score, inspector, hash, timestamp) 
+            `INSERT INTO reports (id, plate, model, km, owner, cpf, chassi, checks, photos, score, inspector, hash, created_at) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-            [id, plate, model, km, owner, cpf, chassi, JSON.stringify(checks), JSON.stringify(photos), JSON.stringify(score), JSON.stringify(inspector), hash, timestamp]
+            [id, plate, model, km, owner, cpf, chassi, JSON.stringify(checks), JSON.stringify(photos), JSON.stringify(score), JSON.stringify(inspector), hash, timestamp || new Date().toISOString()]
         );
+        console.log(`Report ${id} saved successfully`);
         res.status(201).json({ success: true });
     } catch (err) {
-        console.error(err);
+        console.error('Error saving report:', err);
         res.status(500).json({ error: 'Database error' });
     }
 });
