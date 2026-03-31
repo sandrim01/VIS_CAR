@@ -547,7 +547,7 @@ const showFullInspectionModal = () => {
 
   modal.innerHTML = `
     <div class="modal-inspection animate-in">
-      <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;">
+      <input type="file" id="camera-input" accept="image/*" style="display: none;">
       
       <div class="modal-header">
         <div>
