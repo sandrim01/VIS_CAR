@@ -284,8 +284,8 @@ const renderApp = () => {
 
     app.innerHTML = `
     <aside class="sidebar">
-      <div class="sidebar-logo" style="display: flex; justify-content: center; padding: 1.5rem 0; margin-bottom: 2rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
-        <img src="/img/logo.png" alt="Logo" style="max-height: 80px; width: auto; filter: drop-shadow(0 0 10px rgba(99,102,241,0.2));">
+      <div class="sidebar-logo" style="display: flex; justify-content: center; padding: 2rem 0; margin-bottom: 3rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <img src="/img/logo.png" alt="Logo" style="max-height: 120px; width: auto; filter: drop-shadow(0 0 15px rgba(99,102,241,0.25));">
       </div>
 
       <div class="nav-group">
@@ -862,8 +862,8 @@ const showReportDetails = (id) => {
     <div style="background: white; color: #000; width: 95%; max-width: 1000px; border-radius: var(--radius-lg); padding: 4rem; position: relative; font-family: Inter, sans-serif;">
       
       <!-- Logo do Laudo -->
-      <div style="text-align: center; margin-bottom: 2.5rem;">
-        <img src="/img/logo.png" style="max-height: 100px; width: auto; margin-bottom: 1rem;">
+      <div style="text-align: center; margin-bottom: 4rem;">
+        <img src="/img/logo.png" style="max-height: 180px; width: auto; margin-bottom: 1.5rem;">
       </div>
 
       <!-- Cabeçalho Administrativo -->
