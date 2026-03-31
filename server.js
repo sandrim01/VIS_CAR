@@ -58,6 +58,9 @@ const initDB = async () => {
             )
         `);
 
+        // Migration: ensure password column exists for existing tables
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password TEXT DEFAULT 'admin123'`);
+
         // Seed initial users if table is empty
         const userCount = await pool.query('SELECT COUNT(*) FROM users');
         if (parseInt(userCount.rows[0].count) === 0) {
