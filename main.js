@@ -2,10 +2,10 @@ import { getCurrentUser, login, logout, maskData, ROLES } from './auth.js';
 import { calculateScore, generateHash, formatUUID, CATEGORIES } from './engine.js';
 import './style.css';
 
-// Pre-load FontAwesome
-const fontAwesome = document.createElement('script');
-fontAwesome.src = 'https://kit.fontawesome.com/64d58efce2.js';
-fontAwesome.crossOrigin = 'anonymous';
+// Pre-load FontAwesome CDN
+const fontAwesome = document.createElement('link');
+fontAwesome.rel = 'stylesheet';
+fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css';
 document.head.appendChild(fontAwesome);
 
 let reports = [];
