@@ -240,8 +240,8 @@ const renderApp = () => {
                 <tr>
                   <td><div style="font-weight: 700; color: #fff;">${u.name}</div></td>
                   <td><span style="font-family: monospace;">${u.id}</span></td>
-                  <td>${u.email}</td>
-                  <td><span class="badge ${u.role === 'ADMINISTRADOR' ? 'badge-success' : 'badge-warning'}" style="${u.role === 'ADMINISTRADOR' ? 'background: rgba(99,102,241,0.2); color: var(--accent);' : 'background: rgba(94,234,212,0.1); color: #5eead4;'}">${u.role}</span></td>
+                  <td>${u.email}<br><span style="font-size: 0.65rem; color: var(--text-muted);">${u.crea ? `CREA: ${u.crea}` : ''}</span></td>
+                  <td><span class="badge ${u.role === 'ADMINISTRADOR' ? 'badge-success' : u.role === 'ENGENHEIRO' ? 'badge-primary' : 'badge-warning'}" style="${u.role === 'ADMINISTRADOR' ? 'background: rgba(99,102,241,0.2); color: var(--accent);' : u.role === 'ENGENHEIRO' ? 'background: rgba(14,165,233,0.2); color: #0ea5e9;' : 'background: rgba(94,234,212,0.1); color: #5eead4;'}">${u.role}</span></td>
                   <td><span class="badge badge-success">${u.status}</span></td>
                   <td style="text-align: right;">
                     <button class="btn btn-ghost edit-user" data-id="${u.id}"><i class="fas fa-edit"></i></button>
@@ -405,9 +405,11 @@ const showEditUserModal = (id) => {
                     <select id="edit-user-role" style="width: 100%; height: 45px; background: var(--bg-elevated); border: 1px solid var(--border-medium); border-radius: 8px; color: #fff; padding: 0 1rem;">
                         <option value="VISTORIADOR" ${user.role === 'VISTORIADOR' ? 'selected' : ''}>VISTORIADOR</option>
                         <option value="ADMINISTRADOR" ${user.role === 'ADMINISTRADOR' ? 'selected' : ''}>ADMINISTRADOR</option>
+                        <option value="ENGENHEIRO" ${user.role === 'ENGENHEIRO' ? 'selected' : ''}>ENGENHEIRO</option>
                     </select>
                 </div>
             </div>
+            <div id="crea-field-edit" class="form-group" style="display: ${user.role === 'ENGENHEIRO' ? 'block' : 'none'};"><label>Registro CREA</label><input type="text" id="edit-user-crea" value="${user.crea || ''}" placeholder="EX: 123456/D"></div>
             <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                 <button type="button" id="close-edit-user-modal" class="btn btn-outline" style="flex: 1;">Cancelar</button>
                 <button type="submit" class="btn btn-primary" style="flex: 2;">Salvar Alterações</button>
@@ -425,7 +427,12 @@ const showEditUserModal = (id) => {
       email: document.getElementById('edit-user-email').value,
       password: document.getElementById('edit-user-password').value || undefined,
       role: document.getElementById('edit-user-role').value,
+      crea: document.getElementById('edit-user-crea').value,
       status: user.status
+    };
+
+    document.getElementById('edit-user-role').onchange = (e) => {
+      document.getElementById('crea-field-edit').style.display = e.target.value === 'ENGENHEIRO' ? 'block' : 'none';
     };
 
     try {
@@ -462,9 +469,11 @@ const showNewUserModal = () => {
                     <select id="user-role" style="width: 100%; height: 45px; background: var(--bg-elevated); border: 1px solid var(--border-medium); border-radius: 8px; color: #fff; padding: 0 1rem;">
                         <option value="VISTORIADOR">VISTORIADOR</option>
                         <option value="ADMINISTRADOR">ADMINISTRADOR</option>
+                        <option value="ENGENHEIRO">ENGENHEIRO</option>
                     </select>
                 </div>
             </div>
+            <div id="crea-field-new" class="form-group" style="display: none;"><label>Registro CREA</label><input type="text" id="user-crea" placeholder="EX: 123456/D"></div>
             <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                 <button type="button" id="close-user-modal" class="btn btn-outline" style="flex: 1;">Cancelar</button>
                 <button type="submit" class="btn btn-primary" style="flex: 2;">Confirmar Cadastro</button>
@@ -483,7 +492,12 @@ const showNewUserModal = () => {
       email: document.getElementById('user-email').value,
       password: document.getElementById('user-password').value,
       role: document.getElementById('user-role').value,
+      crea: document.getElementById('user-crea').value,
       status: 'ATIVO'
+    };
+
+    document.getElementById('user-role').onchange = (e) => {
+      document.getElementById('crea-field-new').style.display = e.target.value === 'ENGENHEIRO' ? 'block' : 'none';
     };
 
     try {
@@ -964,7 +978,7 @@ const showReportDetails = (id) => {
       </div>
 
       <!-- Rodapé Pericial de Assinaturas -->
-      <div style="margin-top: 5rem; padding-top: 3rem; border-top: 2px solid #000; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; align-items: flex-end;">
+      <div style="margin-top: 5rem; padding-top: 3rem; border-top: 2px solid #000; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;">
          <div style="text-align: center; border-top: 1px solid #000; padding-top: 1rem;">
             <p style="font-size: 0.6rem; color: #94a3b8; font-weight: 800; margin-bottom: 3.5rem; text-transform: uppercase;">Assinatura do Vistoriador</p>
              <div style="font-size: 0.8rem; font-weight: 700; color: #000;">${report.inspector?.name || 'Vistoriador N/A'}</div>
@@ -977,7 +991,7 @@ const showReportDetails = (id) => {
              <div style="font-size: 0.6rem; color: #64748b;">DOC: ${report.cpf ? maskData(report.cpf, 'CPF') : 'N/A'}</div>
           </div>
 
-          <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-top: 1rem;">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
              <div style="font-family: monospace; font-size: 0.55rem; color: #64748b; line-height: 1.6; text-align: left; margin-bottom: 1rem; width: 100%;">
                  <p style="font-weight: 900; color: #000; margin-bottom: 0.3rem;">HASH DE AUTENTICIDADE</p>
                  <span style="word-break: break-all;">${report.hash || 'N/A'}</span>
@@ -985,6 +999,15 @@ const showReportDetails = (id) => {
             <div style="width: 100px; height: 100px; background: #fff; border: 1.5px solid #000; padding: 0.5rem; border-radius: 4px; display: grid; place-items: center;">
                <i class="fas fa-qrcode fa-4x" style="opacity: 0.05;"></i>
             </div>
+         </div>
+      </div>
+
+      <!-- Assinatura do Engenheiro (Nova Linha) -->
+      <div style="margin-top: 4rem; display: flex; justify-content: center;">
+         <div style="text-align: center; border-top: 1px solid #000; padding-top: 1rem; width: 350px;">
+            <p style="font-size: 0.6rem; color: #94a3b8; font-weight: 800; margin-bottom: 3.5rem; text-transform: uppercase;">Assinatura do Engenheiro Responsável Técnico</p>
+            <div style="font-size: 0.8rem; font-weight: 700; color: #000;">${users.find(u => u.role === 'ENGENHEIRO')?.name || '__________________________'}</div>
+            <div style="font-size: 0.6rem; color: #64748b;">REGISTRO CREA: ${users.find(u => u.role === 'ENGENHEIRO')?.crea || 'N/A'}</div>
          </div>
       </div>
       

@@ -55,6 +55,7 @@ const initDB = async () => {
                 email TEXT UNIQUE NOT NULL,
                 password TEXT DEFAULT 'admin123',
                 role TEXT NOT NULL,
+                crea TEXT,
                 status TEXT DEFAULT 'ATIVO'
             )
         `);
@@ -63,6 +64,10 @@ const initDB = async () => {
         try {
             await pool.query(`ALTER TABLE reports RENAME COLUMN timestamp TO created_at`);
         } catch (e) { /* ignore if already renamed or doesn't exist */ }
+
+        // Migration: ensure new columns exist for existing tables
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password TEXT DEFAULT 'admin123'`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS crea TEXT`);
 
         await pool.query(`ALTER TABLE reports ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP`);
 
@@ -73,6 +78,7 @@ const initDB = async () => {
 
         // Migration: ensure password column exists for existing tables
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password TEXT DEFAULT 'admin123'`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS crea TEXT`);
 
         // Seed initial users if table is empty
         const userCount = await pool.query('SELECT COUNT(*) FROM users');
@@ -113,11 +119,11 @@ app.get('/api/users', async (req, res) => {
 });
 
 app.post('/api/users', async (req, res) => {
-    const { id, name, email, password, role, status } = req.body;
+    const { id, name, email, password, role, status, crea } = req.body;
     try {
         await pool.query(
-            `INSERT INTO users (id, name, email, password, role, status) VALUES ($1, $2, $3, $4, $5, $6)`,
-            [id, name, email, password || 'admin123', role, status]
+            `INSERT INTO users (id, name, email, password, role, status, crea) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [id, name, email, password || 'admin123', role, status, crea]
         );
         res.status(201).json({ success: true });
     } catch (err) {
@@ -148,17 +154,17 @@ app.post('/api/login', async (req, res) => {
 
 app.put('/api/users/:id', async (req, res) => {
     const { id } = req.params;
-    const { name, email, password, role, status } = req.body;
+    const { name, email, password, role, status, crea } = req.body;
     try {
         if (password) {
             await pool.query(
-                `UPDATE users SET name = $1, email = $2, password = $3, role = $4, status = $5 WHERE id = $6`,
-                [name, email, password, role, status, id]
+                `UPDATE users SET name = $1, email = $2, password = $3, role = $4, status = $5, crea = $6 WHERE id = $7`,
+                [name, email, password, role, status, crea, id]
             );
         } else {
             await pool.query(
-                `UPDATE users SET name = $1, email = $2, role = $3, status = $4 WHERE id = $5`,
-                [name, email, role, status, id]
+                `UPDATE users SET name = $1, email = $2, role = $3, status = $4, crea = $5 WHERE id = $6`,
+                [name, email, role, status, crea, id]
             );
         }
         res.json({ success: true });

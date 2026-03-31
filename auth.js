@@ -1,6 +1,7 @@
 export const ROLES = {
   ADMIN: 'ADMINISTRADOR',
-  VISTORIADOR: 'VISTORIADOR'
+  VISTORIADOR: 'VISTORIADOR',
+  ENGENHEIRO: 'ENGENHEIRO'
 };
 
 // Simple mock user management
