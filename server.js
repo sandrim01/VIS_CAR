@@ -25,6 +25,7 @@ const pool = new pg.Pool({
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'dist')));
+app.use('/img', express.static(path.join(__dirname, 'img')));
 
 // Initialize DB table
 const initDB = async () => {
