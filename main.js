@@ -357,8 +357,11 @@ const renderApp = () => {
       <div style="height: 100vh; width: 100vw; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; color: #fff; padding: 2rem; text-align: center;">
         <i class="fas fa-bug fa-3x" style="color: var(--danger); margin-bottom: 2rem;"></i>
         <h1 style="font-size: 1.5rem; margin-bottom: 1rem;">Erro de Sincronização</h1>
-        <p style="color: #64748b; max-width: 400px; margin-bottom: 2rem;">Não foi possível carregar os dados do banco de dados Railway. Tente limpar o cache.</p>
-        <button onclick="localStorage.clear(); location.reload();" class="btn btn-primary">Recarregar Sistema</button>
+        <p style="color: #64748b; max-width: 400px; margin-bottom: 1rem;">Não foi possível carregar os dados do banco de dados Railway.</p>
+        <div style="font-family: monospace; font-size: 0.7rem; color: var(--danger); background: rgba(255,0,0,0.1); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; max-width: 90%; overflow: hidden; text-overflow: ellipsis;">
+          ${err.message}
+        </div>
+        <button onclick="localStorage.clear(); location.reload();" class="btn btn-primary">Limpar Cache e Reiniciar</button>
       </div>
     `;
   }
