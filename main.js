@@ -218,6 +218,7 @@ const renderApp = () => {
                 <th>E-mail</th>
                 <th>Nível de Privilégio</th>
                 <th>Status</th>
+                <th style="text-align: right;">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -228,6 +229,10 @@ const renderApp = () => {
                   <td>${u.email}</td>
                   <td><span class="badge ${u.role === 'ADMINISTRADOR' ? 'badge-success' : 'badge-warning'}" style="${u.role === 'ADMINISTRADOR' ? 'background: rgba(99,102,241,0.2); color: var(--accent);' : 'background: rgba(94,234,212,0.1); color: #5eead4;'}">${u.role}</span></td>
                   <td><span class="badge badge-success">${u.status}</span></td>
+                  <td style="text-align: right;">
+                    <button class="btn btn-ghost edit-user" data-id="${u.id}"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-ghost delete-user" data-id="${u.id}" style="color: var(--danger);"><i class="fas fa-trash-alt"></i></button>
+                  </td>
                 </tr>
               `).join('')}
             </tbody>
@@ -329,7 +334,82 @@ const renderApp = () => {
     if (newUserBtn) {
       newUserBtn.onclick = showNewUserModal;
     }
+
+    document.querySelectorAll('.edit-user').forEach(btn => {
+      btn.onclick = () => showEditUserModal(btn.dataset.id);
+    });
+
+    document.querySelectorAll('.delete-user').forEach(btn => {
+      btn.onclick = () => handleDeleteUser(btn.dataset.id);
+    });
   }
+};
+
+const handleDeleteUser = async (id) => {
+  if (confirm('Deseja realmente remover este usuário?')) {
+    try {
+      await fetch(`/api/users/${id}`, { method: 'DELETE' });
+      await fetchUsers();
+    } catch (err) {
+      console.error('Erro ao deletar usuário:', err);
+    }
+  }
+};
+
+const showEditUserModal = (id) => {
+  const user = users.find(u => u.id === id);
+  if (!user) return;
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay animate-in';
+  modal.innerHTML = `
+      <div style="background: var(--bg-surface); padding: 2.5rem; border-radius: var(--radius-lg); max-width: 480px; width: 100%; border: 1px solid var(--border-medium);">
+         <h2 style="margin-bottom: 2rem; font-size: 1.25rem; font-weight: 800;">Editar Dados do Perito</h2>
+         <form id="edit-user-form">
+            <div class="form-group"><label>Nome Completo</label><input type="text" id="edit-user-name" value="${user.name}" required></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group"><label>ID (Código)</label><input type="text" id="edit-user-id" value="${user.id}" readonly style="opacity: 0.6;"></div>
+                <div class="form-group"><label>E-mail</label><input type="email" id="edit-user-email" value="${user.email}" required></div>
+            </div>
+            <div class="form-group">
+                <label>Nível de Acesso</label>
+                <select id="edit-user-role" style="width: 100%; height: 45px; background: var(--bg-elevated); border: 1px solid var(--border-medium); border-radius: 8px; color: #fff; padding: 0 1rem;">
+                    <option value="VISTORIADOR" ${user.role === 'VISTORIADOR' ? 'selected' : ''}>VISTORIADOR</option>
+                    <option value="ADMINISTRADOR" ${user.role === 'ADMINISTRADOR' ? 'selected' : ''}>ADMINISTRADOR</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="button" id="close-edit-user-modal" class="btn btn-outline" style="flex: 1;">Cancelar</button>
+                <button type="submit" class="btn btn-primary" style="flex: 2;">Salvar Alterações</button>
+            </div>
+         </form>
+      </div>
+    `;
+  document.body.appendChild(modal);
+
+  document.getElementById('close-edit-user-modal').onclick = () => modal.remove();
+  document.getElementById('edit-user-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const updatedUser = {
+      name: document.getElementById('edit-user-name').value,
+      email: document.getElementById('edit-user-email').value,
+      role: document.getElementById('edit-user-role').value,
+      status: user.status
+    };
+
+    try {
+      await fetch(`/api/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedUser)
+      });
+      await fetchUsers();
+      modal.remove();
+    } catch (err) {
+      console.error('Erro ao atualizar usuário:', err);
+      alert('Falha ao atualizar dados.');
+    }
+  };
 };
 
 const showNewUserModal = () => {

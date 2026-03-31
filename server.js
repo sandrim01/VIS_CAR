@@ -127,6 +127,32 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+app.put('/api/users/:id', async (req, res) => {
+    const { id } = req.params;
+    const { name, email, role, status } = req.body;
+    try {
+        await pool.query(
+            `UPDATE users SET name = $1, email = $2, role = $3, status = $4 WHERE id = $5`,
+            [name, email, role, status, id]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM users WHERE id = $1', [id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
 app.post('/api/reports', async (req, res) => {
     const { id, plate, model, km, owner, cpf, chassi, checks, photos, score, inspector, hash, timestamp } = req.body;
     try {
