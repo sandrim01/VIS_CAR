@@ -70,6 +70,9 @@ const initDB = async () => {
             await pool.query(`ALTER TABLE reports ALTER COLUMN id TYPE TEXT`);
         } catch (e) { /* ignore if already text */ }
 
+        // One-time cleanup (remove after run)
+        await pool.query(`TRUNCATE TABLE reports`);
+
         // Migration: ensure password column exists for existing tables
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password TEXT DEFAULT 'admin123'`);
 
