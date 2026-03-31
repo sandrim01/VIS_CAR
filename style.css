@@ -230,12 +230,16 @@ body {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.9);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
+    /* Start from top instead of centering */
     justify-content: center;
-    z-index: 1000;
-    backdrop-filter: blur(8px);
+    z-index: 2000;
+    backdrop-filter: blur(10px);
+    overflow-y: auto;
+    /* Allow overlay to scroll */
+    padding: 2rem 1rem;
 }
 
 .modal-inspection {

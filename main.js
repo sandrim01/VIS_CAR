@@ -113,7 +113,7 @@ const renderApp = () => {
               </thead>
               <tbody>
                 ${total === 0 ? '<tr><td colspan="5" style="text-align: center; padding: 4rem; color: var(--text-muted);">Aguardando primeira vistoria...</td></tr>' : ''}
-                ${reports.slice(0, 5).map(r => `
+                 ${reports.map(r => `
                   <tr>
                     <td>
                       <div style="font-weight: 600; color: #fff;">${r.model}</div>
@@ -832,7 +832,7 @@ const showReportDetails = (id) => {
   const scoreColor = report.score.status === 'APROVADO' ? '#22c55e' : report.score.status === 'REPROVADO' ? '#ef4444' : '#eab308';
 
   modal.innerHTML = `
-    <div style="background: white; color: #000; width: 95%; max-width: 1000px; min-height: 95vh; border-radius: var(--radius-lg); overflow-y: auto; padding: 4rem; position: relative; font-family: Inter, sans-serif;">
+    <div style="background: white; color: #000; width: 95%; max-width: 1000px; border-radius: var(--radius-lg); padding: 4rem; position: relative; font-family: Inter, sans-serif;">
       
       <!-- Cabeçalho Administrativo -->
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem; border-bottom: 3px solid #000; padding-bottom: 2rem;">
