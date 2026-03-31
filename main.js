@@ -183,6 +183,9 @@ const renderApp = () => {
                     <span class="badge ${r.score?.status === 'APROVADO' ? 'badge-success' : r.score?.status === 'REPROVADO' ? 'badge-danger' : 'badge-warning'}">
                       ${r.score?.status || 'N/A'}
                     </span>
+                    <div style="margin-top: 0.4rem;">
+                        ${r.signed_by_engineer ? '<span style="font-size: 0.6rem; color: var(--success); font-weight: 700;"><i class="fas fa-check-double"></i> ASSINADO ENG</span>' : '<span style="font-size: 0.6rem; color: var(--warning); font-weight: 700;"><i class="fas fa-clock"></i> AGUARD. ENG</span>'}
+                    </div>
                   </td>
                   <td>
                     <button class="btn btn-ghost open-report" data-id="${r.id}"><i class="fas fa-file-pdf"></i> Visualizar</button>
@@ -269,17 +272,50 @@ const renderApp = () => {
                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;"><span>Interior / Higiene</span> <span style="font-weight: 700;">05%</span></div>
             </div>
           </div>
-          <div class="stat-card">
-            <h4 style="font-size: 0.9rem; margin-bottom: 1.5rem;">Segurança e Conformidade</h4>
-             <div style="display: grid; gap: 1rem;">
-               <div style="display: flex; justify-content: space-between; font-size: 0.85rem;"><span>Hash de Integridade</span> <span style="color: var(--success);">SHA-256 ATIVO</span></div>
-               <div style="display: flex; justify-content: space-between; font-size: 0.85rem;"><span>Mascaramento LGPD</span> <span style="color: var(--success);">ATIVO (Módulos v1.0)</span></div>
-               <div style="display: flex; justify-content: space-between; font-size: 0.85rem;"><span>Watermark pericial</span> <span style="color: var(--warning);">PENDENTE</span></div>
-            </div>
-          </div>
         </div>
       </div>
     `;
+    } else if (activeSection === 'pendentes') {
+      const pendingReports = reports.filter(r => !r.signed_by_engineer);
+      mainContent = `
+        <div class="container animate-in">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h3 style="font-size: 1.25rem; font-weight: 700;">Vistorias Aguardando Assinatura Técnica</h3>
+            <span class="badge badge-warning">${pendingReports.length} Pendentes</span>
+          </div>
+          <div class="data-table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Veículo</th>
+                  <th>Vistoriador</th>
+                  <th>Placa</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Ação de Engenharia</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${pendingReports.length === 0 ? '<tr><td colspan="6" style="text-align: center; padding: 4rem; color: var(--text-muted);">Tudo em dia! Nenhuma vistoria pendente de assinatura.</td></tr>' : ''}
+                ${pendingReports.map(r => `
+                  <tr>
+                    <td>${r.created_at || r.timestamp ? new Date(r.created_at || r.timestamp).toLocaleDateString() : 'N/A'}</td>
+                    <td><div style="font-weight: 700; color: #fff;">${r.model}</div></td>
+                    <td>${r.inspector?.name || 'Vistoriador'}</td>
+                    <td><span style="font-family: monospace;">${r.plate}</span></td>
+                    <td>
+                      <span class="badge ${r.score?.status === 'APROVADO' ? 'badge-success' : 'badge-danger'}">${r.score?.status || 'N/A'}</span>
+                    </td>
+                    <td style="text-align: right;">
+                      <button class="btn btn-primary sign-report-btn" data-id="${r.id}" style="font-size: 0.7rem; background: var(--accent);"><i class="fas fa-signature"></i> REVISAR E ASSINAR</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
     }
 
     app.innerHTML = `
@@ -292,6 +328,7 @@ const renderApp = () => {
         <p class="nav-label">Menu Principal</p>
         <div class="nav-link ${activeSection === 'dashboard' ? 'active' : ''}" data-nav="dashboard"><i class="fas fa-grid-2-horizontal"></i> Dashboard</div>
         <div class="nav-link ${activeSection === 'vistorias' ? 'active' : ''}" data-nav="vistorias"><i class="fas fa-clipboard-list"></i> Vistorias</div>
+        ${user.role === 'ENGENHEIRO' ? `<div class="nav-link ${activeSection === 'pendentes' ? 'active' : ''}" data-nav="pendentes"><i class="fas fa-signature"></i> Vistorias a assinar</div>` : ''}
         <div class="nav-link ${activeSection === 'analytics' ? 'active' : ''}" data-nav="analytics"><i class="fas fa-chart-line"></i> Analytics</div>
       </div>
 
@@ -356,6 +393,12 @@ const renderApp = () => {
         btn.onclick = () => handleDeleteUser(btn.dataset.id);
       });
     }
+
+    if (activeSection === 'pendentes') {
+      document.querySelectorAll('.sign-report-btn').forEach(btn => {
+        btn.onclick = () => handleEngineerSign(btn.dataset.id);
+      });
+    }
   } catch (err) {
     console.error('Fatal application error:', err);
     app.innerHTML = `
@@ -379,6 +422,20 @@ const handleDeleteUser = async (id) => {
       await fetchUsers();
     } catch (err) {
       console.error('Erro ao deletar usuário:', err);
+    }
+  }
+};
+
+const handleEngineerSign = async (id) => {
+  if (confirm('Você confirma a revisão técnica e assegura a conformidade desta vistoria?')) {
+    try {
+      const response = await fetch(`/api/reports/${id}/sign`, { method: 'PUT' });
+      if (response.ok) {
+        alert('Vistoria assinada digitalmente com sucesso!');
+        await fetchReports();
+      }
+    } catch (err) {
+      console.error('Erro ao assinar:', err);
     }
   }
 };
@@ -577,6 +634,7 @@ const showFullInspectionModal = () => {
           <div class="step-circle" data-step="2">2</div>
           <div class="step-circle" data-step="3">3</div>
           <div class="step-circle" data-step="4">4</div>
+          <div class="step-circle" data-step="5">5</div>
         </div>
 
         <form id="full-inspection-form">
@@ -657,6 +715,25 @@ const showFullInspectionModal = () => {
                   <li><i class="fas fa-check-circle" style="color: var(--success);"></i> Assinatura digital pronta</li>
                 </ul>
              </div>
+          <!-- Passo 5: Assinaturas -->
+          <div class="step-content" data-step="5">
+             <h3 style="font-size: 1rem; margin-bottom: 2rem; font-weight: 800;">Etapa 5: Assinaturas Digitais</h3>
+             <div style="display: grid; gap: 1.5rem;">
+                <div style="background: var(--bg-elevated); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-medium); display: flex; align-items: center; gap: 1rem;">
+                   <input type="checkbox" id="sign-inspector" style="width: 24px; height: 24px;">
+                   <div>
+                      <p style="font-size: 0.85rem; font-weight: 700;">Assinatura do Vistoriador</p>
+                      <p style="font-size: 0.65rem; color: var(--text-muted);">${getCurrentUser().name} (ID: ${getCurrentUser().id})</p>
+                   </div>
+                </div>
+                <div style="background: var(--bg-elevated); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-medium); display: flex; align-items: center; gap: 1rem;">
+                   <input type="checkbox" id="sign-owner" style="width: 24px; height: 24px;">
+                   <div>
+                      <p style="font-size: 0.85rem; font-weight: 700;">Assinatura do Proprietário / Responsável</p>
+                      <p style="font-size: 0.65rem; color: var(--text-muted);">Confirmar identidade conforme documento apresentado</p>
+                   </div>
+                </div>
+             </div>
           </div>
         </form>
       </div>
@@ -664,7 +741,7 @@ const showFullInspectionModal = () => {
       <div class="modal-footer">
         <button id="prev-step" class="btn btn-ghost" style="display: none;">Voltar</button>
         <button id="next-step" class="btn btn-primary" style="padding-left: 2rem; padding-right: 2rem;">Próximo Passo <i class="fas fa-arrow-right"></i></button>
-        <button id="finalize-inspection" class="btn btn-primary" style="display: none; background: var(--success); color: white; border: none; padding-left: 2rem; padding-right: 2rem;">Assinar e Finalizar <i class="fas fa-signature"></i></button>
+        <button id="finalize-inspection" class="btn btn-primary" style="display: none; background: var(--success); color: white; border: none; padding-left: 2rem; padding-right: 2rem;">Gravar e Finalizar Vistoria <i class="fas fa-save"></i></button>
       </div>
     </div>
   `;
@@ -684,8 +761,8 @@ const showFullInspectionModal = () => {
     });
 
     document.getElementById('prev-step').style.display = currentStep > 1 ? 'block' : 'none';
-    document.getElementById('next-step').style.display = currentStep < 4 ? 'block' : 'none';
-    document.getElementById('finalize-inspection').style.display = currentStep === 4 ? 'block' : 'none';
+    document.getElementById('next-step').style.display = currentStep < 5 ? 'block' : 'none';
+    document.getElementById('finalize-inspection').style.display = currentStep === 5 ? 'block' : 'none';
 
     if (currentStep === 4) {
       document.getElementById('photo-count').textContent = Object.keys(capturedPhotos).length;
@@ -740,6 +817,12 @@ const showFullInspectionModal = () => {
         return;
       }
     }
+    if (currentStep === 2) {
+      if (Object.keys(capturedPhotos).length < 3) {
+        alert('Por favor, registre ao menos as fotos principais do veículo.');
+        return;
+      }
+    }
     currentStep++;
     updateStepper();
   };
@@ -765,6 +848,10 @@ const showFullInspectionModal = () => {
   document.getElementById('close-modal').onclick = () => modal.remove();
 
   document.getElementById('finalize-inspection').onclick = async () => {
+    if (!document.getElementById('sign-inspector').checked || !document.getElementById('sign-owner').checked) {
+      alert('As assinaturas do Vistoriador e Proprietário são obrigatórias para finalizar.');
+      return;
+    }
     const checks = {};
     sections.forEach(sec => {
       let catStatus = 'CLEAR';
@@ -883,13 +970,20 @@ const showReportDetails = (id) => {
       <!-- Cabeçalho Administrativo -->
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem; border-bottom: 3px solid #000; padding-bottom: 2rem;">
         <div style="text-align: left;">
-          <h1 style="font-size: 1.8rem; letter-spacing: 0.1em; font-weight: 950; margin: 0; color: #000; text-transform: uppercase;">Laudo Certificado de Vistoria Pericial</h1>
-          <p style="font-size: 0.8rem; color: #64748b; font-weight: 800; margin-top: 0.5rem;">REGISTRO ÚNICO DE INSPEÇÃO • ID: ${report.id}</p>
+          <h1 style="font-size: 1.5rem; font-weight: 950; text-transform: uppercase;">Laudo Cautelar / Transferência</h1>
+          <p style="font-size: 0.7rem; color: #64748b; font-weight: 800;">Protocolo: <span style="font-family: monospace; color: #000;">${report.id}</span></p>
+          <p style="font-size: 0.7rem; color: #64748b; font-weight: 800;">Data/Hora: <span style="color: #000;">${new Date(report.created_at || report.timestamp).toLocaleString()}</span></p>
+          ${report.signed_by_engineer ? '<div style="margin-top: 1rem; display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(34,197,94,0.1); color: #15803d; border: 1.5px solid #16a34a; padding: 0.3rem 0.6rem; border-radius: 4px; font-weight: 900; font-size: 0.65rem; text-transform: uppercase;"><i class="fas fa-check-double"></i> ASSINADO DIGITALMENTE POR ENGENHEIRO</div>' : ''}
         </div>
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 1rem;">
           <button id="print-pdf-btn" class="btn btn-primary" style="background: #000; color: #fff; border-radius: 4px; padding: 0.75rem 1.5rem;">
             <i class="fas fa-file-pdf"></i> EXPORTAR LAUDO COMPLETO (PDF)
           </button>
+          ${!report.signed_by_engineer && getCurrentUser().role === 'ENGENHEIRO' ? `
+            <button id="modal-sign-btn" class="btn btn-primary" style="background: var(--success); color: #fff; border-radius: 4px; padding: 0.75rem 1.5rem; width: 100%; font-weight: 800;">
+              <i class="fas fa-signature"></i> CONCORDAR E ASSINAR LAUDO
+            </button>
+          ` : ''}
           <div style="font-size: 0.65rem; font-weight: 850; background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 4px;">DATA DE EMISSÃO: ${report.created_at || report.timestamp ? new Date(report.created_at || report.timestamp).toLocaleString() : 'Data N/A'}</div>
         </div>
       </div>
@@ -1006,8 +1100,8 @@ const showReportDetails = (id) => {
       <div style="margin-top: 4rem; display: flex; justify-content: center;">
          <div style="text-align: center; border-top: 1px solid #000; padding-top: 1rem; width: 350px;">
             <p style="font-size: 0.6rem; color: #94a3b8; font-weight: 800; margin-bottom: 3.5rem; text-transform: uppercase;">Assinatura do Engenheiro Responsável Técnico</p>
-            <div style="font-size: 0.8rem; font-weight: 700; color: #000;">${users.find(u => u.role === 'ENGENHEIRO')?.name || '__________________________'}</div>
-            <div style="font-size: 0.6rem; color: #64748b;">REGISTRO CREA: ${users.find(u => u.role === 'ENGENHEIRO')?.crea || 'N/A'}</div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: #000;">${report.signed_by_engineer ? (users.find(u => u.role === 'ENGENHEIRO')?.name || 'ENGENHEIRO CADASTRADO') : '__________________________'}</div>
+            <div style="font-size: 0.6rem; color: #64748b;">${report.signed_by_engineer ? `REGISTRO CREA: ${users.find(u => u.role === 'ENGENHEIRO')?.crea || 'N/A'}` : 'REGISTRO CREA / DATA'}</div>
          </div>
       </div>
       
@@ -1017,6 +1111,12 @@ const showReportDetails = (id) => {
   document.body.appendChild(modal);
   document.getElementById('close-report').onclick = () => modal.remove();
   document.getElementById('print-pdf-btn').onclick = () => window.print();
+  if (document.getElementById('modal-sign-btn')) {
+    document.getElementById('modal-sign-btn').onclick = () => {
+      handleEngineerSign(id);
+      modal.remove();
+    };
+  }
 };
 
 

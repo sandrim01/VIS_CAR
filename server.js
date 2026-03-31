@@ -64,6 +64,9 @@ const initDB = async () => {
         try {
             await pool.query(`ALTER TABLE reports RENAME COLUMN timestamp TO created_at`);
         } catch (e) { /* ignore if already renamed or doesn't exist */ }
+        try {
+            await pool.query(`ALTER TABLE reports ADD COLUMN IF NOT EXISTS signed_by_engineer BOOLEAN DEFAULT FALSE`);
+        } catch (e) { }
 
         // Migration: ensure new columns exist for existing tables
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password TEXT DEFAULT 'admin123'`);
@@ -190,14 +193,25 @@ app.post('/api/reports', async (req, res) => {
     try {
         console.log(`Attempting to save report: ${id} for plate: ${plate}`);
         await pool.query(
-            `INSERT INTO reports (id, plate, model, km, owner, cpf, chassi, checks, photos, score, inspector, hash, created_at) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+            `INSERT INTO reports (id, plate, model, km, owner, cpf, chassi, checks, photos, score, inspector, hash, created_at, signed_by_engineer) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, FALSE)`,
             [id, plate, model, km, owner, cpf, chassi, JSON.stringify(checks), JSON.stringify(photos), JSON.stringify(score), JSON.stringify(inspector), hash, timestamp || new Date().toISOString()]
         );
         console.log(`Report ${id} saved successfully`);
         res.status(201).json({ success: true });
     } catch (err) {
         console.error('Error saving report:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+app.put('/api/reports/:id/sign', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query(`UPDATE reports SET signed_by_engineer = TRUE WHERE id = $1`, [id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error signing report:', err);
         res.status(500).json({ error: 'Database error' });
     }
 });
