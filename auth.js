@@ -9,23 +9,34 @@ const users = [
   { id: 'VST-245', name: 'Carlos Perito', role: ROLES.VISTORIADOR, email: 'carlos@vistoria.car' }
 ];
 
-let currentUser = null;
+let currentUser = JSON.parse(localStorage.getItem('vis_user'));
 
 export const getCurrentUser = () => currentUser;
 
-export const login = (email, password) => {
-  // Simple check for demo
-  const user = users.find(u => u.email === email && password === 'admin123');
-  if (user) {
-    currentUser = user;
-    window.dispatchEvent(new CustomEvent('userChanged', { detail: currentUser }));
-    return true;
+export const login = async (email, password) => {
+  try {
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    if (response.ok) {
+      currentUser = await response.json();
+      localStorage.setItem('vis_user', JSON.stringify(currentUser));
+      window.dispatchEvent(new CustomEvent('userChanged', { detail: currentUser }));
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.error('Login error:', err);
+    return false;
   }
-  return false;
 };
 
 export const logout = () => {
   currentUser = null;
+  localStorage.removeItem('vis_user');
   window.dispatchEvent(new CustomEvent('userChanged', { detail: null }));
 };
 

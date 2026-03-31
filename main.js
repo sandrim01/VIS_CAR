@@ -721,11 +721,11 @@ const renderLogin = () => {
     </div>
   `;
 
-  document.getElementById('login-form').onsubmit = (e) => {
+  document.getElementById('login-form').onsubmit = async (e) => {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
-    if (login(email, password)) {
+    if (await login(email, password)) {
       renderApp();
     } else {
       document.getElementById('login-error').style.display = 'block';

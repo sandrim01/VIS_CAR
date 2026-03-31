@@ -105,6 +105,24 @@ app.post('/api/users', async (req, res) => {
         res.status(201).json({ success: true });
     } catch (err) {
         console.error(err);
+        res.status(500).json({ error: 'Database error (maybe user exists)' });
+    }
+});
+
+app.post('/api/login', async (req, res) => {
+    const { email, password } = req.body;
+    // For now, keep simple password check 'admin123' as per original project
+    if (password !== 'admin123') {
+        return res.status(401).json({ error: 'Invalid password' });
+    }
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Database error' });
     }
 });
