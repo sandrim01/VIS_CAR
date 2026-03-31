@@ -79,8 +79,8 @@ app.post('/api/reports', async (req, res) => {
     }
 });
 
-// For any other route, serve the index.html from dist
-app.get('/:path*', (req, res) => {
+// For any other route (SPA Fallback), serve the index.html from dist
+app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
