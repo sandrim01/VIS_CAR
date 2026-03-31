@@ -543,14 +543,23 @@ body {
 }
 
 .btn-ghost {
-    background: transparent;
-    color: var(--text-secondary);
-    border: none;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
 }
 
 .btn-ghost:hover {
-    background: var(--border-subtle);
-    color: var(--text-primary);
+    background: var(--border-medium);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.table .btn-ghost {
+    padding: 0.4rem;
+    line-height: 1;
+    min-width: 36px;
+    height: 36px;
+    justify-content: center;
 }
 
 .btn-outline {
