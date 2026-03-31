@@ -40,32 +40,40 @@ const fetchUsers = async () => {
 const app = document.getElementById('app');
 
 const renderApp = () => {
-  if (!getCurrentUser()) {
-    renderLogin();
-    return;
-  }
+  try {
+    if (!getCurrentUser()) {
+      renderLogin();
+      return;
+    }
 
-  // Load reports once
-  if (!isLoaded) {
-    fetchReports();
-    return;
-  }
+    // Show loading state if reports not yet fetched
+    if (!isLoaded) {
+      app.innerHTML = `
+        <div style="height: 100vh; width: 100vw; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0a0a0b; color: #fff;">
+          <i class="fas fa-circle-notch fa-spin fa-3x" style="color: var(--accent); margin-bottom: 2rem;"></i>
+          <h2 style="font-weight: 800; letter-spacing: 2px;">SINCRONIZANDO DADOS...</h2>
+          <p style="color: #64748b; font-size: 0.8rem; margin-top: 1rem;">Conectando ao banco de dados Railway</p>
+        </div>
+      `;
+      fetchReports();
+      return;
+    }
 
-  if (!usersLoaded && activeSection === 'usuarios') {
-    fetchUsers();
-  }
+    if (!usersLoaded && activeSection === 'usuarios') {
+      fetchUsers();
+    }
 
-  const user = getCurrentUser();
-  const total = reports.length;
-  const approved = reports.filter(r => r.score?.status === 'APROVADO').length;
-  const warnings = reports.filter(r => r.score?.status && r.score.status.includes('APONTAMENTO')).length;
-  const rejected = reports.filter(r => r.score?.status === 'REPROVADO').length;
+    const user = getCurrentUser();
+    const total = reports.length;
+    const approved = reports.filter(r => r.score?.status === 'APROVADO').length;
+    const warnings = reports.filter(r => r.score?.status && r.score.status.includes('APONTAMENTO')).length;
+    const rejected = reports.filter(r => r.score?.status === 'REPROVADO').length;
 
 
-  let mainContent = '';
+    let mainContent = '';
 
-  if (activeSection === 'dashboard') {
-    mainContent = `
+    if (activeSection === 'dashboard') {
+      mainContent = `
       <div class="container animate-in">
         <div class="stats-grid">
           <div class="stat-card">
@@ -139,8 +147,8 @@ const renderApp = () => {
         </div>
       </div>
     `;
-  } else if (activeSection === 'vistorias') {
-    mainContent = `
+    } else if (activeSection === 'vistorias') {
+      mainContent = `
       <div class="container animate-in">
         <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem;">Módulo de Gestão de Vistorias</h3>
         <div class="data-table-container">
@@ -180,8 +188,8 @@ const renderApp = () => {
         </div>
       </div>
     `;
-  } else if (activeSection === 'analytics') {
-    mainContent = `
+    } else if (activeSection === 'analytics') {
+      mainContent = `
       <div class="container animate-in">
         <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 2rem;">Indicadores de Performance</h3>
         <div class="stats-grid">
@@ -202,8 +210,8 @@ const renderApp = () => {
         </div>
       </div>
     `;
-  } else if (activeSection === 'usuarios') {
-    mainContent = `
+    } else if (activeSection === 'usuarios') {
+      mainContent = `
       <div class="container animate-in">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
           <h3 style="font-size: 1.25rem; font-weight: 700;">Gestão de Acessos (RBAC)</h3>
@@ -240,8 +248,8 @@ const renderApp = () => {
         </div>
       </div>
     `;
-  } else if (activeSection === 'ajustes') {
-    mainContent = `
+    } else if (activeSection === 'ajustes') {
+      mainContent = `
       <div class="container animate-in">
         <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 2rem;">Configurações do Motor (Core Engine)</h3>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
@@ -266,9 +274,9 @@ const renderApp = () => {
         </div>
       </div>
     `;
-  }
+    }
 
-  app.innerHTML = `
+    app.innerHTML = `
     <aside class="sidebar">
       <div class="sidebar-logo">
         <div class="logo-box"><i class="fas fa-shield-alt text-white"></i></div>
@@ -310,38 +318,49 @@ const renderApp = () => {
     </main>
   `;
 
-  // UI Event Bindings
-  document.getElementById('logout-btn').onclick = () => {
-    logout();
-    renderApp();
-  };
-
-  document.getElementById('new-inspection-btn').onclick = showConsentModal;
-
-  document.querySelectorAll('[data-nav]').forEach(el => {
-    el.onclick = () => {
-      activeSection = el.dataset.nav;
+    // UI Event Bindings
+    document.getElementById('logout-btn').onclick = () => {
+      logout();
       renderApp();
     };
-  });
 
-  document.querySelectorAll('.open-report').forEach(btn => {
-    btn.onclick = () => showReportDetails(btn.dataset.id);
-  });
+    document.getElementById('new-inspection-btn').onclick = showConsentModal;
 
-  if (activeSection === 'usuarios') {
-    const newUserBtn = document.getElementById('new-user-btn');
-    if (newUserBtn) {
-      newUserBtn.onclick = showNewUserModal;
+    document.querySelectorAll('[data-nav]').forEach(el => {
+      el.onclick = () => {
+        activeSection = el.dataset.nav;
+        renderApp();
+      };
+    });
+
+    document.querySelectorAll('.open-report').forEach(btn => {
+      btn.onclick = () => showReportDetails(btn.dataset.id);
+    });
+
+    if (activeSection === 'usuarios') {
+      const newUserBtn = document.getElementById('new-user-btn');
+      if (newUserBtn) {
+        newUserBtn.onclick = showNewUserModal;
+      }
+
+      document.querySelectorAll('.edit-user').forEach(btn => {
+        btn.onclick = () => showEditUserModal(btn.dataset.id);
+      });
+
+      document.querySelectorAll('.delete-user').forEach(btn => {
+        btn.onclick = () => handleDeleteUser(btn.dataset.id);
+      });
     }
-
-    document.querySelectorAll('.edit-user').forEach(btn => {
-      btn.onclick = () => showEditUserModal(btn.dataset.id);
-    });
-
-    document.querySelectorAll('.delete-user').forEach(btn => {
-      btn.onclick = () => handleDeleteUser(btn.dataset.id);
-    });
+  } catch (err) {
+    console.error('Fatal application error:', err);
+    app.innerHTML = `
+      <div style="height: 100vh; width: 100vw; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; color: #fff; padding: 2rem; text-align: center;">
+        <i class="fas fa-bug fa-3x" style="color: var(--danger); margin-bottom: 2rem;"></i>
+        <h1 style="font-size: 1.5rem; margin-bottom: 1rem;">Erro de Sincronização</h1>
+        <p style="color: #64748b; max-width: 400px; margin-bottom: 2rem;">Não foi possível carregar os dados do banco de dados Railway. Tente limpar o cache.</p>
+        <button onclick="localStorage.clear(); location.reload();" class="btn btn-primary">Recarregar Sistema</button>
+      </div>
+    `;
   }
 };
 
