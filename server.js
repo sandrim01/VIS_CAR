@@ -52,6 +52,7 @@ const initDB = async () => {
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
                 email TEXT UNIQUE NOT NULL,
+                password TEXT DEFAULT 'admin123',
                 role TEXT NOT NULL,
                 status TEXT DEFAULT 'ATIVO'
             )
@@ -61,9 +62,9 @@ const initDB = async () => {
         const userCount = await pool.query('SELECT COUNT(*) FROM users');
         if (parseInt(userCount.rows[0].count) === 0) {
             await pool.query(`
-                INSERT INTO users (id, name, email, role, status) VALUES 
-                ('ADM-001', 'Alê System', 'admin@vistoria.car', 'ADMINISTRADOR', 'ATIVO'),
-                ('VST-245', 'Carlos Perito', 'carlos@vistoria.car', 'VISTORIADOR', 'ATIVO')
+                INSERT INTO users (id, name, email, password, role, status) VALUES 
+                ('ADM-001', 'Alê System', 'admin@vistoria.car', 'admin123', 'ADMINISTRADOR', 'ATIVO'),
+                ('VST-245', 'Carlos Perito', 'carlos@vistoria.car', 'admin123', 'VISTORIADOR', 'ATIVO')
             `);
         }
 
@@ -96,11 +97,11 @@ app.get('/api/users', async (req, res) => {
 });
 
 app.post('/api/users', async (req, res) => {
-    const { id, name, email, role, status } = req.body;
+    const { id, name, email, password, role, status } = req.body;
     try {
         await pool.query(
-            `INSERT INTO users (id, name, email, role, status) VALUES ($1, $2, $3, $4, $5)`,
-            [id, name, email, role, status]
+            `INSERT INTO users (id, name, email, password, role, status) VALUES ($1, $2, $3, $4, $5, $6)`,
+            [id, name, email, password || 'admin123', role, status]
         );
         res.status(201).json({ success: true });
     } catch (err) {
@@ -111,16 +112,18 @@ app.post('/api/users', async (req, res) => {
 
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
-    // For now, keep simple password check 'admin123' as per original project
-    if (password !== 'admin123') {
-        return res.status(401).json({ error: 'Invalid password' });
-    }
     try {
         const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'User not found' });
         }
-        res.json(result.rows[0]);
+
+        const user = result.rows[0];
+        if (user.password !== password) {
+            return res.status(401).json({ error: 'Invalid password' });
+        }
+
+        res.json(user);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Database error' });
@@ -129,12 +132,19 @@ app.post('/api/login', async (req, res) => {
 
 app.put('/api/users/:id', async (req, res) => {
     const { id } = req.params;
-    const { name, email, role, status } = req.body;
+    const { name, email, password, role, status } = req.body;
     try {
-        await pool.query(
-            `UPDATE users SET name = $1, email = $2, role = $3, status = $4 WHERE id = $5`,
-            [name, email, role, status, id]
-        );
+        if (password) {
+            await pool.query(
+                `UPDATE users SET name = $1, email = $2, password = $3, role = $4, status = $5 WHERE id = $6`,
+                [name, email, password, role, status, id]
+            );
+        } else {
+            await pool.query(
+                `UPDATE users SET name = $1, email = $2, role = $3, status = $4 WHERE id = $5`,
+                [name, email, role, status, id]
+            );
+        }
         res.json({ success: true });
     } catch (err) {
         console.error(err);

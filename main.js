@@ -371,12 +371,15 @@ const showEditUserModal = (id) => {
                 <div class="form-group"><label>ID (Código)</label><input type="text" id="edit-user-id" value="${user.id}" readonly style="opacity: 0.6;"></div>
                 <div class="form-group"><label>E-mail</label><input type="email" id="edit-user-email" value="${user.email}" required></div>
             </div>
-            <div class="form-group">
-                <label>Nível de Acesso</label>
-                <select id="edit-user-role" style="width: 100%; height: 45px; background: var(--bg-elevated); border: 1px solid var(--border-medium); border-radius: 8px; color: #fff; padding: 0 1rem;">
-                    <option value="VISTORIADOR" ${user.role === 'VISTORIADOR' ? 'selected' : ''}>VISTORIADOR</option>
-                    <option value="ADMINISTRADOR" ${user.role === 'ADMINISTRADOR' ? 'selected' : ''}>ADMINISTRADOR</option>
-                </select>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group"><label>Nova Senha (Opcional)</label><input type="password" id="edit-user-password" placeholder="Em branco p/ manter"></div>
+                <div class="form-group">
+                    <label>Nível de Acesso</label>
+                    <select id="edit-user-role" style="width: 100%; height: 45px; background: var(--bg-elevated); border: 1px solid var(--border-medium); border-radius: 8px; color: #fff; padding: 0 1rem;">
+                        <option value="VISTORIADOR" ${user.role === 'VISTORIADOR' ? 'selected' : ''}>VISTORIADOR</option>
+                        <option value="ADMINISTRADOR" ${user.role === 'ADMINISTRADOR' ? 'selected' : ''}>ADMINISTRADOR</option>
+                    </select>
+                </div>
             </div>
             <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                 <button type="button" id="close-edit-user-modal" class="btn btn-outline" style="flex: 1;">Cancelar</button>
@@ -393,6 +396,7 @@ const showEditUserModal = (id) => {
     const updatedUser = {
       name: document.getElementById('edit-user-name').value,
       email: document.getElementById('edit-user-email').value,
+      password: document.getElementById('edit-user-password').value || undefined,
       role: document.getElementById('edit-user-role').value,
       status: user.status
     };
@@ -424,12 +428,15 @@ const showNewUserModal = () => {
                 <div class="form-group"><label>ID (Código)</label><input type="text" id="user-id" placeholder="EX: VST-999" required></div>
                 <div class="form-group"><label>E-mail</label><input type="email" id="user-email" required></div>
             </div>
-            <div class="form-group">
-                <label>Nível de Acesso</label>
-                <select id="user-role" style="width: 100%; height: 45px; background: var(--bg-elevated); border: 1px solid var(--border-medium); border-radius: 8px; color: #fff; padding: 0 1rem;">
-                    <option value="VISTORIADOR">VISTORIADOR</option>
-                    <option value="ADMINISTRADOR">ADMINISTRADOR</option>
-                </select>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group"><label>Senha de Acesso</label><input type="password" id="user-password" placeholder="Mínimo 6 chars" required></div>
+                <div class="form-group">
+                    <label>Nível de Acesso</label>
+                    <select id="user-role" style="width: 100%; height: 45px; background: var(--bg-elevated); border: 1px solid var(--border-medium); border-radius: 8px; color: #fff; padding: 0 1rem;">
+                        <option value="VISTORIADOR">VISTORIADOR</option>
+                        <option value="ADMINISTRADOR">ADMINISTRADOR</option>
+                    </select>
+                </div>
             </div>
             <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                 <button type="button" id="close-user-modal" class="btn btn-outline" style="flex: 1;">Cancelar</button>
@@ -447,6 +454,7 @@ const showNewUserModal = () => {
       id: document.getElementById('user-id').value.toUpperCase(),
       name: document.getElementById('user-name').value,
       email: document.getElementById('user-email').value,
+      password: document.getElementById('user-password').value,
       role: document.getElementById('user-role').value,
       status: 'ATIVO'
     };
