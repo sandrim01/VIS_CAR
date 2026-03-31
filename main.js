@@ -57,9 +57,9 @@ const renderApp = () => {
 
   const user = getCurrentUser();
   const total = reports.length;
-  const approved = reports.filter(r => r.score.status === 'APROVADO').length;
-  const warnings = reports.filter(r => r.score.status && r.score.status.includes('APONTAMENTO')).length;
-  const rejected = reports.filter(r => r.score.status === 'REPROVADO').length;
+  const approved = reports.filter(r => r.score?.status === 'APROVADO').length;
+  const warnings = reports.filter(r => r.score?.status && r.score.status.includes('APONTAMENTO')).length;
+  const rejected = reports.filter(r => r.score?.status === 'REPROVADO').length;
 
 
   let mainContent = '';
@@ -121,11 +121,11 @@ const renderApp = () => {
                     </td>
                     <td><span style="font-family: monospace; font-weight: 700;">${r.plate}</span></td>
                     <td>
-                      <div style="font-weight: 700;">${r.score.score}/100</div>
+                      <div style="font-weight: 700;">${r.score?.score || 0}/100</div>
                     </td>
                     <td>
-                      <span class="badge ${r.score.status === 'APROVADO' ? 'badge-success' : r.score.status === 'REPROVADO' ? 'badge-danger' : 'badge-warning'}">
-                        ${r.score.status}
+                      <span class="badge ${r.score?.status === 'APROVADO' ? 'badge-success' : r.score?.status === 'REPROVADO' ? 'badge-danger' : 'badge-warning'}">
+                        ${r.score?.status || 'N/A'}
                       </span>
                     </td>
                     <td style="text-align: right;">
@@ -164,10 +164,10 @@ const renderApp = () => {
                   <td style="font-weight: 700; color: #fff;">${r.model}</td>
                   <td>${r.owner}</td>
                   <td><span style="font-family: monospace;">${r.plate}</span></td>
-                  <td><div style="color: var(--warning);">${'★'.repeat(r.score.stars)}${'☆'.repeat(5 - r.score.stars)}</div></td>
+                  <td><div style="color: var(--warning);">${'★'.repeat(r.score?.stars || 0)}${'☆'.repeat(5 - (r.score?.stars || 0))}</div></td>
                   <td>
-                    <span class="badge ${r.score.status === 'APROVADO' ? 'badge-success' : r.score.status === 'REPROVADO' ? 'badge-danger' : 'badge-warning'}">
-                      ${r.score.status}
+                    <span class="badge ${r.score?.status === 'APROVADO' ? 'badge-success' : r.score?.status === 'REPROVADO' ? 'badge-danger' : 'badge-warning'}">
+                      ${r.score?.status || 'N/A'}
                     </span>
                   </td>
                   <td>
