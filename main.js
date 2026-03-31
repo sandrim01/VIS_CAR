@@ -17,11 +17,17 @@ let usersLoaded = false;
 const fetchReports = async () => {
   try {
     const response = await fetch('/api/reports');
-    reports = await response.json();
+    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+    const data = await response.json();
+    if (!Array.isArray(data)) throw new Error('Data format error (expected array)');
+    reports = data;
     isLoaded = true;
     renderApp();
   } catch (err) {
     console.error('Erro ao buscar relatórios:', err);
+    // Force renderApp to show the error if we are already in an inconsistent state
+    if (isLoaded) renderApp();
+    else app.innerHTML = `<div style="color:white; padding: 2rem;">CRITICAL: ${err.message}</div>`;
   }
 };
 
@@ -851,7 +857,7 @@ const showReportDetails = (id) => {
   const modal = document.createElement('div');
   modal.className = 'modal-overlay animate-in';
 
-  const scoreColor = report.score.status === 'APROVADO' ? '#22c55e' : report.score.status === 'REPROVADO' ? '#ef4444' : '#eab308';
+  const scoreColor = report.score?.status === 'APROVADO' ? '#22c55e' : report.score?.status === 'REPROVADO' ? '#ef4444' : '#eab308';
 
   modal.innerHTML = `
     <div style="background: white; color: #000; width: 95%; max-width: 1000px; border-radius: var(--radius-lg); padding: 4rem; position: relative; font-family: Inter, sans-serif;">
@@ -908,7 +914,7 @@ const showReportDetails = (id) => {
         <h3 style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 2rem; font-weight: 900; text-align: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem;">Checklist Técnico de Avaliação Pericial</h3>
         <div style="display: grid; gap: 3rem;">
            ${Object.entries(CATEGORIES).map(([key, cat]) => {
-    const catData = report.checks[key];
+    const catData = report.checks?.[key] || {};
     const catItems = catData.items || {};
     const catColor = catData.status === 'CLEAR' ? '#22c55e' : catData.status === 'WARNING' ? '#eab308' : '#ef4444';
 
@@ -943,14 +949,14 @@ const showReportDetails = (id) => {
       <!-- Sumário Final e Score -->
       <div class="score-box-print" style="border: 4px solid #000; padding: 3rem; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 5rem;">
          <div>
-            <p style="font-size: 0.8rem; color: #94a3b8; font-weight: 900; margin-bottom: 0.8rem; text-transform: uppercase;">Classificação de Conformidade</p>
-            <div style="font-size: 2.5rem; font-weight: 950; color: ${scoreColor}; line-height: 1; text-transform: uppercase;">${report.score.status}</div>
-            <div style="color: #eab308; font-size: 1.5rem; margin-top: 1rem;">${'★'.repeat(report.score.stars)}${'☆'.repeat(5 - report.score.stars)}</div>
-         </div>
-         <div style="text-align: right;">
-            <p style="font-size: 0.8rem; color: #94a3b8; font-weight: 900; margin-bottom: 0.8rem; text-transform: uppercase;">Índice de Integridade</p>
-            <div style="font-size: 4.5rem; font-weight: 950; line-height: 1; color: #000;">${report.score.score}<span style="font-size: 1.5rem; color: #94a3b8;">/100</span></div>
-         </div>
+             <p style="font-size: 0.8rem; color: #94a3b8; font-weight: 900; margin-bottom: 0.8rem; text-transform: uppercase;">Classificação de Conformidade</p>
+             <div style="font-size: 2.5rem; font-weight: 950; color: ${scoreColor}; line-height: 1; text-transform: uppercase;">${report.score?.status || 'N/A'}</div>
+             <div style="color: #eab308; font-size: 1.5rem; margin-top: 1rem;">${'★'.repeat(report.score?.stars || 0)}${'☆'.repeat(5 - (report.score?.stars || 0))}</div>
+          </div>
+          <div style="text-align: right;">
+             <p style="font-size: 0.8rem; color: #94a3b8; font-weight: 900; margin-bottom: 0.8rem; text-transform: uppercase;">Índice de Integridade</p>
+             <div style="font-size: 4.5rem; font-weight: 950; line-height: 1; color: #000;">${report.score?.score || 0}<span style="font-size: 1.5rem; color: #94a3b8;">/100</span></div>
+          </div>
       </div>
 
       <!-- Rodapé Pericial de Assinaturas -->
