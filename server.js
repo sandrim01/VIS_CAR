@@ -58,6 +58,18 @@ const initDB = async () => {
             )
         `);
 
+        // Migrations for reports table
+        try {
+            await pool.query(`ALTER TABLE reports RENAME COLUMN timestamp TO created_at`);
+        } catch (e) { /* ignore if already renamed or doesn't exist */ }
+
+        await pool.query(`ALTER TABLE reports ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP`);
+
+        // Convert UUID to TEXT for id if necessary (risky but needed if we want flexibility)
+        try {
+            await pool.query(`ALTER TABLE reports ALTER COLUMN id TYPE TEXT`);
+        } catch (e) { /* ignore if already text */ }
+
         // Migration: ensure password column exists for existing tables
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password TEXT DEFAULT 'admin123'`);
 
@@ -71,7 +83,7 @@ const initDB = async () => {
             `);
         }
 
-        console.log('Database initialized');
+        console.log('Database initialized and migrated');
     } catch (err) {
         console.error('Error initializing database:', err);
     }
