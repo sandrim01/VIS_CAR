@@ -8,41 +8,20 @@ fontAwesome.src = 'https://kit.fontawesome.com/64d58efce2.js';
 fontAwesome.crossOrigin = 'anonymous';
 document.head.appendChild(fontAwesome);
 
-// Global State
-// Global State
-let reports = [
-  {
-    id: formatUUID(), plate: 'ABC-1234', model: 'Toyota Corolla 2.0 VVT-i', km: '34500', owner: 'Mariana Costa', cpf: '123.456.789-00', chassi: '9BW8X0C2P1A4J098',
-    timestamp: new Date().toISOString(), inspector: { id: 'ADM-01', name: 'Alê System', role: 'ADMINISTRADOR' },
-    checks: { ESTRUTURA: { status: 'CLEAR' }, SEGURANÇA: { status: 'CLEAR' }, MECÂNICA: { status: 'CLEAR' }, ESTÉTICA: { status: 'CLEAR' }, INTERIOR: { status: 'CLEAR' } },
-    score: { score: 100, stars: 5, status: 'APROVADO' }, hash: '1a2b3c4d5e6f7g8h9i0j'
-  },
-  {
-    id: formatUUID(), plate: 'XYZ-5678', model: 'VW Gol 1.6 MSI', km: '89000', owner: 'Bruno Ferreira', cpf: '098.765.432-11', chassi: '9BW8X0C2P1A4J777',
-    timestamp: new Date(Date.now() - 3600000).toISOString(), inspector: { id: 'VST-245', name: 'Carlos Perito', role: 'VISTORIADOR' },
-    checks: { ESTRUTURA: { status: 'CLEAR' }, SEGURANÇA: { status: 'CLEAR' }, MECÂNICA: { status: 'CLEAR' }, ESTÉTICA: { status: 'WARNING' }, INTERIOR: { status: 'WARNING' } },
-    score: { score: 92, stars: 4, status: 'APROVADO COM APONTAMENTO' }, hash: 'abcdef1234567890'
-  },
-  {
-    id: formatUUID(), plate: 'BRA-3S21', model: 'Honda Civic LX', km: '56000', owner: 'Rodrigo Lima', cpf: '444.555.666-77', chassi: '1HGFA1B2C3D4E5G6',
-    timestamp: new Date(Date.now() - 86400000).toISOString(), inspector: { id: 'VST-245', name: 'Carlos Perito', role: 'VISTORIADOR' },
-    checks: { ESTRUTURA: { status: 'CLEAR' }, SEGURANÇA: { status: 'FAIL' }, MECÂNICA: { status: 'CLEAR' }, ESTÉTICA: { status: 'CLEAR' }, INTERIOR: { status: 'CLEAR' } },
-    score: { score: 75, stars: 2, status: 'REPROVADO', reason: 'Falha em itens críticos de segurança' }, hash: 'fecda0987654321'
-  },
-  {
-    id: formatUUID(), plate: 'KDT-4422', model: 'Fiat Strada HD', km: '125000', owner: 'Auto Mecânica Pedro', cpf: '22.333.444/0001-55', chassi: '5FF8X0C2P1A4X000',
-    timestamp: new Date(Date.now() - 172800000).toISOString(), inspector: { id: 'ADM-01', name: 'Alê System', role: 'ADMINISTRADOR' },
-    checks: { ESTRUTURA: { status: 'FAIL', remanche: true }, SEGURANÇA: { status: 'CLEAR' }, MECÂNICA: { status: 'CLEAR' }, ESTÉTICA: { status: 'CLEAR' }, INTERIOR: { status: 'CLEAR' } },
-    score: { score: 0, stars: 0, status: 'REPROVADO', reason: 'Danos estruturais graves (Remanche)' }, hash: '000000000deadbeef'
-  },
-  {
-    id: formatUUID(), plate: 'JPP-0010', model: 'Jeep Compass Longitude', km: '12000', owner: 'Renata Souza', cpf: '999.888.777-66', chassi: '3C4PFCAA5KT222111',
-    timestamp: new Date(Date.now() - 259200000).toISOString(), inspector: { id: 'VST-245', name: 'Carlos Perito', role: 'VISTORIADOR' },
-    checks: { ESTRUTURA: { status: 'CLEAR' }, SEGURANÇA: { status: 'CLEAR' }, MECÂNICA: { status: 'WARNING' }, ESTÉTICA: { status: 'WARNING' }, INTERIOR: { status: 'CLEAR' } },
-    score: { score: 85, stars: 4, status: 'APROVADO' }, hash: 'hashgeep123456'
-  }
-];
+let reports = [];
 let activeSection = 'dashboard';
+let isLoaded = false;
+
+const fetchReports = async () => {
+  try {
+    const response = await fetch('/api/reports');
+    reports = await response.json();
+    isLoaded = true;
+    renderApp();
+  } catch (err) {
+    console.error('Erro ao buscar relatórios:', err);
+  }
+};
 
 // App elements
 const app = document.getElementById('app');
@@ -52,11 +31,19 @@ const renderApp = () => {
     renderLogin();
     return;
   }
+
+  // Load reports once
+  if (!isLoaded) {
+    fetchReports();
+    return;
+  }
+
   const user = getCurrentUser();
   const total = reports.length;
   const approved = reports.filter(r => r.score.status === 'APROVADO').length;
-  const warnings = reports.filter(r => r.score.status.includes('APONTAMENTO')).length;
+  const warnings = reports.filter(r => r.score.status && r.score.status.includes('APONTAMENTO')).length;
   const rejected = reports.filter(r => r.score.status === 'REPROVADO').length;
+
 
   let mainContent = '';
 
@@ -614,9 +601,19 @@ const showFullInspectionModal = () => {
     };
 
     report.hash = await generateHash(report);
-    reports.unshift(report);
-    modal.remove();
-    renderApp();
+
+    try {
+      await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(report)
+      });
+      await fetchReports();
+      modal.remove();
+    } catch (err) {
+      console.error('Erro ao salvar relatório:', err);
+      alert('Falha ao salvar no banco de dados.');
+    }
   };
 
   updateStepper(); // Initial sync of step indicators and buttons
