@@ -187,8 +187,10 @@ const renderApp = () => {
                         ${r.overall_status === 'REVISION_REQUESTED' ? '<span style="font-size: 0.6rem; color: var(--danger); font-weight: 700;"><i class="fas fa-undo"></i> REVISÃO SOLICITADA</span>' : (r.signed_by_engineer ? '<span style="font-size: 0.6rem; color: var(--success); font-weight: 700;"><i class="fas fa-check-double"></i> ASSINADO ENG</span>' : '<span style="font-size: 0.6rem; color: var(--warning); font-weight: 700;"><i class="fas fa-clock"></i> AGUARD. ENG</span>')}
                     </div>
                   </td>
-                  <td>
-                    <button class="btn btn-ghost open-report" data-id="${r.id}"><i class="fas fa-file-pdf"></i> Visualizar</button>
+                  <td style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <button class="btn btn-ghost open-report" data-id="${r.id}" title="Ver Laudo"><i class="fas fa-file-pdf"></i></button>
+                    ${!r.signed_by_engineer ? `<button class="btn btn-ghost edit-report-btn" data-id="${r.id}" title="Editar"><i class="fas fa-edit"></i></button>` : ''}
+                    <button class="btn btn-ghost delete-report" data-id="${r.id}" style="color: var(--danger);" title="Excluir"><i class="fas fa-trash"></i></button>
                   </td>
                 </tr>
               `).join('')}
@@ -417,6 +419,14 @@ const renderApp = () => {
       btn.onclick = () => showReportDetails(btn.dataset.id);
     });
 
+    document.querySelectorAll('.edit-report-btn').forEach(btn => {
+      btn.onclick = () => showFullInspectionModal(btn.dataset.id);
+    });
+
+    document.querySelectorAll('.delete-report').forEach(btn => {
+      btn.onclick = () => handleDeleteReport(btn.dataset.id);
+    });
+
     if (activeSection === 'usuarios') {
       const newUserBtn = document.getElementById('new-user-btn');
       if (newUserBtn) {
@@ -440,7 +450,7 @@ const renderApp = () => {
 
     if (activeSection === 'revisoes') {
       document.querySelectorAll('.edit-report-btn').forEach(btn => {
-        btn.onclick = () => startInspection(btn.dataset.id);
+        btn.onclick = () => showFullInspectionModal(btn.dataset.id);
       });
     }
   } catch (err) {
@@ -499,6 +509,17 @@ const handleEngineerReject = async (id) => {
       }
     } catch (err) {
       console.error('Erro ao rejeitar:', err);
+    }
+  }
+};
+
+const handleDeleteReport = async (id) => {
+  if (confirm('Deseja realmente excluir permanentemente este laudo de vistoria? Esta ação não pode ser desfeita.')) {
+    try {
+      await fetch(`/api/reports/${id}`, { method: 'DELETE' });
+      await fetchReports();
+    } catch (err) {
+      console.error('Erro ao deletar laudo:', err);
     }
   }
 };
@@ -721,13 +742,16 @@ const showFullInspectionModal = (editId = null) => {
             <h3 style="font-size: 1rem; margin-bottom: 0.5rem; font-weight: 800;">Etapa 2: Registro Fotográfico</h3>
             <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2rem;">Capture as evidências visuais obrigatórias.</p>
             <div class="photo-grid">
-              ${photoLabels.map(label => `
-                <div class="photo-card" data-photo="${label}">
-                  <i class="fas fa-camera"></i>
-                  <span>${label}</span>
-                  <button type="button" class="remove-btn" title="Remover"><i class="fas fa-trash"></i></button>
-                </div>
-              `).join('')}
+               ${photoLabels.map(label => {
+    const photo = capturedPhotos[label];
+    return `
+                    <div class="photo-card ${photo ? 'filled' : ''}" data-photo="${label}">
+                      ${photo ? `<img src="${photo}">` : '<i class="fas fa-camera"></i>'}
+                      <span>${label}</span>
+                      <button type="button" class="remove-btn" title="Remover"><i class="fas fa-trash"></i></button>
+                    </div>
+                 `;
+  }).join('')}
             </div>
           </div>
 
@@ -751,7 +775,7 @@ const showFullInspectionModal = (editId = null) => {
                                 <button type="button" class="status-btn ${editData?.checks?.[sec.key]?.items?.[item]?.status === 'FAIL' ? 'active danger' : ''}" data-val="FAIL">❌</button>
                              </div>
                           </div>
-                          <textarea class="comment-input" rows="1" placeholder="Parecer técnico..." value="${editData?.checks?.[sec.key]?.items?.[item]?.comment || ''}"></textarea>
+                          <textarea class="comment-input" rows="1" placeholder="Parecer técnico...">${editData?.checks?.[sec.key]?.items?.[item]?.comment || ''}</textarea>
                         </div>
                   `).join('')}
                 </div>

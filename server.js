@@ -245,6 +245,17 @@ app.put('/api/reports/:id', async (req, res) => {
     }
 });
 
+app.delete('/api/reports/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM reports WHERE id = $1', [id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error deleting report:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
 // For any other route (SPA Fallback), serve the index.html from dist
 app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
