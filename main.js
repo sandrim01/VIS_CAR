@@ -1370,55 +1370,57 @@ const showReportDetails = (id) => {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> BAIXANDO...';
     btn.disabled = true;
 
-    const styleBlock = document.createElement('style');
-    styleBlock.innerHTML = `
-      #printable-report { 
-        position: absolute !important; 
-        top: 0 !important; 
-        left: 0 !important; 
-        margin: 0 !important; 
-        max-width: none !important;
-        width: 850px !important; 
-        min-width: 850px !important; 
-        transform: none !important; 
-        overflow: visible !important;
-      }
-      * { animation: none !important; transition: none !important; }
-    `;
-    document.head.appendChild(styleBlock);
+    // Create a pristine off-screen container to bypass mobile viewport bounds completely
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.width = '850px';
+    container.style.zIndex = '-9999';
+    container.style.pointerEvents = 'none';
 
-    // Give browser a frame to apply the absolute positioning
-    setTimeout(() => {
-      const element = document.getElementById('printable-report');
-      const opt = {
-        margin: [10, 0, 10, 0],
-        filename: `LAUDO_${report.plate || 'VISTORIA'}_${new Date().getTime()}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          letterRendering: true,
-          width: 850,
-          windowWidth: 850,
-          scrollX: 0,
-          scrollY: 0
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
+    // Clone the report to avoid modifying the visual UI
+    const originalElement = document.getElementById('printable-report');
+    const clone = originalElement.cloneNode(true);
 
-      html2pdf().set(opt).from(element).save().then(() => {
-        btn.innerHTML = originalBtn;
-        btn.disabled = false;
-        [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
-        styleBlock.remove();
-      }).catch(err => {
-        console.error(err);
-        btn.innerHTML = 'ERRO AO GERAR';
-        btn.disabled = false;
-        [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
-        styleBlock.remove();
-      });
-    }, 100);
+    // Override any inherited mobile boundaries
+    clone.style.width = '850px';
+    clone.style.minWidth = '850px';
+    clone.style.maxWidth = '850px';
+    clone.style.margin = '0';
+    clone.style.position = 'relative';
+
+    container.appendChild(clone);
+    document.body.appendChild(container);
+
+    const opt = {
+      margin: [10, 0, 10, 0],
+      filename: `LAUDO_${report.plate || 'VISTORIA'}_${new Date().getTime()}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true,
+        width: 850,
+        windowWidth: 1200, // Force desktop CSS queries to prevent stacking inside clone
+        scrollX: 0,
+        scrollY: 0
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(clone).save().then(() => {
+      btn.innerHTML = originalBtn;
+      btn.disabled = false;
+      [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
+      container.remove();
+    }).catch(err => {
+      console.error(err);
+      btn.innerHTML = 'ERRO AO GERAR';
+      btn.disabled = false;
+      [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
+      container.remove();
+    });
   };
   if (document.getElementById('modal-sign-btn')) {
     document.getElementById('modal-sign-btn').onclick = () => {
