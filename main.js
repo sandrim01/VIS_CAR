@@ -1191,7 +1191,7 @@ const showReportDetails = (id) => {
   const scoreColor = report.score?.status === 'APROVADO' ? '#22c55e' : report.score?.status === 'REPROVADO' ? '#ef4444' : '#eab308';
 
   modal.innerHTML = `
-    <div id="printable-report" style="background: white; color: #000; width: 95%; max-width: 1000px; border-radius: var(--radius-lg); padding: 4rem; position: relative; font-family: Inter, sans-serif; overflow: hidden;">
+    <div id="printable-report" style="background: white; color: #000; width: 850px; min-height: 297mm; padding: 50px; position: relative; font-family: Inter, sans-serif; margin: 0 auto; box-sizing: border-box;">
       
       <!-- Logo do Laudo -->
       <div style="text-align: center; margin-bottom: 4rem;">
@@ -1207,8 +1207,8 @@ const showReportDetails = (id) => {
           ${report.signed_by_engineer ? '<div style="margin-top: 1rem; display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(34,197,94,0.1); color: #15803d; border: 1.5px solid #16a34a; padding: 0.3rem 0.6rem; border-radius: 4px; font-weight: 900; font-size: 0.65rem; text-transform: uppercase;"><i class="fas fa-check-double"></i> ASSINADO DIGITALMENTE POR ENGENHEIRO</div>' : ''}
         </div>
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 1rem;">
-          <button id="print-pdf-btn" class="btn btn-primary" style="background: #000; color: #fff; border-radius: 4px; padding: 0.75rem 1.5rem;">
-            <i class="fas fa-file-pdf"></i> EXPORTAR LAUDO COMPLETO (PDF)
+          <button id="print-pdf-btn" class="btn btn-primary" style="background: #000; color: #fff; border-radius: 4px; padding: 0.75rem 1.5rem; font-weight: 800;">
+            <i class="fas fa-file-download" style="margin-right: 0.5rem;"></i> BAIXAR LAUDO (PDF)
           </button>
           <button id="govbr-sign-btn" class="btn btn-outline" style="border: 1.5px solid #000; color: #000; font-weight: 850; font-size: 0.65rem; padding: 0.6rem 1rem; width: 100%; border-radius: 4px; margin-top: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
             <img src="https://www.gov.br/++theme++padrao_govbr/img/govbr-logo-large.png" style="height: 14px;"> ASSINAR COM GOV.BR (ITI)
@@ -1368,14 +1368,15 @@ const showReportDetails = (id) => {
 
     const element = document.getElementById('printable-report');
     const opt = {
-      margin: [10, 5, 10, 5],
-      filename: `LAUDO_${report.plate}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`,
+      margin: [10, 0, 10, 0],
+      filename: `LAUDO_${report.plate || 'VISTORIA'}.pdf`,
       image: { type: 'jpeg', quality: 1.0 },
       html2canvas: {
         scale: 2,
         useCORS: true,
         letterRendering: true,
-        windowWidth: 1000
+        width: 850,
+        windowWidth: 850
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
