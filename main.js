@@ -396,7 +396,7 @@ const renderApp = () => {
 
     if (activeSection === 'pendentes') {
       document.querySelectorAll('.sign-report-btn').forEach(btn => {
-        btn.onclick = () => handleEngineerSign(btn.dataset.id);
+        btn.onclick = () => showReportDetails(btn.dataset.id);
       });
     }
   } catch (err) {
