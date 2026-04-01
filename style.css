@@ -719,7 +719,7 @@ body {
 }
 
 /* --- MOBILE RESPONSIVENESS (BREAKPOINTS) --- */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     body {
         flex-direction: column;
         overflow: auto;
@@ -833,7 +833,9 @@ body {
         font-size: 0.75rem !important;
     }
 
-    .step-label {
+    .step-label,
+    .nav-label,
+    .sidebar-logo {
         display: none !important;
     }
 
