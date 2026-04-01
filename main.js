@@ -1364,63 +1364,68 @@ const showReportDetails = (id) => {
     // Hide UI
     [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'hidden'; });
 
-    // Isolation Style Block: forces the reporting container to behave like a standard A4 screen
-    // This stops inherited flexbox/scaling properties from the tablet's browser from squashing the layout
+    // Viewport Override Method: Force the rendering engine to calculate layout at desktop width
     const originalBtn = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> BAIXANDO...';
     btn.disabled = true;
 
-    // Create a pristine off-screen container to bypass mobile viewport bounds completely
-    const container = document.createElement('div');
-    container.style.position = 'absolute';
-    container.style.top = '0';
-    container.style.left = '0';
-    container.style.width = '850px';
-    container.style.zIndex = '-9999';
-    container.style.pointerEvents = 'none';
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    const originalViewport = viewportMeta ? viewportMeta.content : '';
+    if (viewportMeta) {
+      // Force device scale to 1200px instantly so flexbox calculates columns properly
+      viewportMeta.content = 'width=1200, initial-scale=1.0, maximum-scale=1.0';
+    }
 
-    // Clone the report to avoid modifying the visual UI
-    const originalElement = document.getElementById('printable-report');
-    const clone = originalElement.cloneNode(true);
+    const element = document.getElementById('printable-report');
+    const originalWidth = element.style.width;
+    const originalMinWidth = element.style.minWidth;
+    const originalMargin = element.style.margin;
 
-    // Override any inherited mobile boundaries
-    clone.style.width = '850px';
-    clone.style.minWidth = '850px';
-    clone.style.maxWidth = '850px';
-    clone.style.margin = '0';
-    clone.style.position = 'relative';
+    // Fix element strictly
+    element.style.width = '850px';
+    element.style.minWidth = '850px';
+    element.style.maxWidth = '850px';
+    element.style.margin = '0 auto';
 
-    container.appendChild(clone);
-    document.body.appendChild(container);
+    // Wait 500ms for browser paint cycle to reflow the layout
+    setTimeout(() => {
+      const opt = {
+        margin: [10, 0, 10, 0],
+        filename: `LAUDO_${report.plate || 'VISTORIA'}_${new Date().getTime()}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          letterRendering: true,
+          width: 850,
+          windowWidth: 1200, // Sync with viewport
+          scrollX: 0,
+          scrollY: 0
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
 
-    const opt = {
-      margin: [10, 0, 10, 0],
-      filename: `LAUDO_${report.plate || 'VISTORIA'}_${new Date().getTime()}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        letterRendering: true,
-        width: 850,
-        windowWidth: 1200, // Force desktop CSS queries to prevent stacking inside clone
-        scrollX: 0,
-        scrollY: 0
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
+      html2pdf().set(opt).from(element).save().then(() => {
+        if (viewportMeta) viewportMeta.content = originalViewport;
+        element.style.width = originalWidth;
+        element.style.minWidth = originalMinWidth;
+        element.style.margin = originalMargin;
 
-    html2pdf().set(opt).from(clone).save().then(() => {
-      btn.innerHTML = originalBtn;
-      btn.disabled = false;
-      [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
-      container.remove();
-    }).catch(err => {
-      console.error(err);
-      btn.innerHTML = 'ERRO AO GERAR';
-      btn.disabled = false;
-      [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
-      container.remove();
-    });
+        btn.innerHTML = originalBtn;
+        btn.disabled = false;
+        [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
+      }).catch(err => {
+        console.error(err);
+        if (viewportMeta) viewportMeta.content = originalViewport;
+        element.style.width = originalWidth;
+        element.style.minWidth = originalMinWidth;
+        element.style.margin = originalMargin;
+
+        btn.innerHTML = 'ERRO AO GERAR';
+        btn.disabled = false;
+        [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
+      });
+    }, 500);
   };
   if (document.getElementById('modal-sign-btn')) {
     document.getElementById('modal-sign-btn').onclick = () => {
