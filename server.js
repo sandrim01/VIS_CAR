@@ -235,11 +235,11 @@ app.put('/api/reports/:id/reject', async (req, res) => {
 
 app.put('/api/reports/:id', async (req, res) => {
     const { id } = req.params;
-    const { plate, model, km, owner, cpf, chassi, checks, photos, score, hash } = req.body;
+    const { plate, model, km, owner, cpf, chassi, checks, photos, signatures, score, hash } = req.body;
     try {
         await pool.query(
-            `UPDATE reports SET plate=$1, model=$2, km=$3, owner=$4, cpf=$5, chassi=$6, checks=$7, photos=$8, score=$9, hash=$10, overall_status='PENDING' WHERE id=$11`,
-            [plate, model, km, owner, cpf, chassi, JSON.stringify(checks), JSON.stringify(photos), JSON.stringify(score), hash, id]
+            `UPDATE reports SET plate=$1, model=$2, km=$3, owner=$4, cpf=$5, chassi=$6, checks=$7, photos=$8, signatures=$9, score=$10, hash=$11, overall_status='PENDING' WHERE id=$12`,
+            [plate, model, km, owner, cpf, chassi, JSON.stringify(checks), JSON.stringify(photos), JSON.stringify(signatures), JSON.stringify(score), hash, id]
         );
         res.json({ success: true });
     } catch (err) {
