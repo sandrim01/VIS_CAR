@@ -68,6 +68,8 @@ const initDB = async () => {
             await pool.query(`ALTER TABLE reports ADD COLUMN IF NOT EXISTS signed_by_engineer BOOLEAN DEFAULT FALSE`);
             await pool.query(`ALTER TABLE reports ADD COLUMN IF NOT EXISTS overall_status TEXT DEFAULT 'PENDING'`);
             await pool.query(`ALTER TABLE reports ADD COLUMN IF NOT EXISTS engineer_comment TEXT`);
+            await pool.query(`ALTER TABLE reports ADD COLUMN IF NOT EXISTS signatures JSONB`);
+            await pool.query(`ALTER TABLE reports ADD COLUMN IF NOT EXISTS engineer_signature TEXT`);
         } catch (e) { }
 
         // Migration: ensure new columns exist for existing tables
@@ -191,13 +193,13 @@ app.delete('/api/users/:id', async (req, res) => {
 });
 
 app.post('/api/reports', async (req, res) => {
-    const { id, plate, model, km, owner, cpf, chassi, checks, photos, score, inspector, hash, timestamp } = req.body;
+    const { id, plate, model, km, owner, cpf, chassi, checks, photos, signatures, score, inspector, hash, timestamp } = req.body;
     try {
         console.log(`Attempting to save report: ${id} for plate: ${plate}`);
         await pool.query(
-            `INSERT INTO reports (id, plate, model, km, owner, cpf, chassi, checks, photos, score, inspector, hash, created_at, signed_by_engineer, overall_status) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, FALSE, 'PENDING')`,
-            [id, plate, model, km, owner, cpf, chassi, JSON.stringify(checks), JSON.stringify(photos), JSON.stringify(score), JSON.stringify(inspector), hash, timestamp || new Date().toISOString()]
+            `INSERT INTO reports (id, plate, model, km, owner, cpf, chassi, checks, photos, signatures, score, inspector, hash, created_at, signed_by_engineer, overall_status) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, FALSE, 'PENDING')`,
+            [id, plate, model, km, owner, cpf, chassi, JSON.stringify(checks), JSON.stringify(photos), JSON.stringify(signatures), JSON.stringify(score), JSON.stringify(inspector), hash, timestamp || new Date().toISOString()]
         );
         console.log(`Report ${id} saved successfully`);
         res.status(201).json({ success: true });
@@ -209,8 +211,9 @@ app.post('/api/reports', async (req, res) => {
 
 app.put('/api/reports/:id/sign', async (req, res) => {
     const { id } = req.params;
+    const { signature } = req.body;
     try {
-        await pool.query(`UPDATE reports SET signed_by_engineer = TRUE, overall_status = 'SIGNED' WHERE id = $1`, [id]);
+        await pool.query('UPDATE reports SET signed_by_engineer = TRUE, overall_status = \'SIGNED\', engineer_signature = $1 WHERE id = $2', [signature, id]);
         res.json({ success: true });
     } catch (err) {
         console.error('Error signing report:', err);

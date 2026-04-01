@@ -480,18 +480,75 @@ const handleDeleteUser = async (id) => {
   }
 };
 
-const handleEngineerSign = async (id) => {
-  if (confirm('Você confirma a revisão técnica e assegura a conformidade desta vistoria?')) {
+const handleEngineerSign = (id) => {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay animate-in';
+  modal.innerHTML = `
+      <div style="background: var(--bg-surface); padding: 2.5rem; border-radius: var(--radius-lg); max-width: 500px; width: 100%; border: 1px solid var(--border-medium); text-align: center;">
+         <h2 style="margin-bottom: 1rem; font-size: 1.25rem; font-weight: 800;">Assinatura do Engenheiro</h2>
+         <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2rem;">Desenhe sua assinatura no campo abaixo para validar o laudo.</p>
+         
+         <div style="background: #fff; border-radius: 8px; border: 1px solid #ccc; padding: 10px; margin-bottom: 1.5rem;">
+            <canvas id="canvas-engineer" width="400" height="150" style="width: 100%; height: 150px; cursor: crosshair; touch-action: none;"></canvas>
+         </div>
+
+         <div style="display: flex; gap: 1rem;">
+            <button id="cancel-sign" class="btn btn-outline" style="flex: 1;">Cancelar</button>
+            <button id="clear-engineer-sig" class="btn btn-ghost" style="flex: 1; border: 1px solid var(--border-medium);">Limpar</button>
+            <button id="confirm-sign" class="btn btn-primary" style="flex: 2; background: var(--success);">Confirmar Assinatura</button>
+         </div>
+      </div>
+  `;
+  document.body.appendChild(modal);
+
+  const canvas = document.getElementById('canvas-engineer');
+  const ctx = canvas.getContext('2d');
+  ctx.lineWidth = 3;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#000';
+
+  let drawing = false;
+  const getPos = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: (clientX - rect.left) * (canvas.width / rect.width),
+      y: (clientY - rect.top) * (canvas.height / rect.height)
+    };
+  };
+
+  const startDrawing = (e) => { drawing = true; const pos = getPos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); };
+  const draw = (e) => { if (!drawing) return; e.preventDefault(); const pos = getPos(e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); };
+  const stopDrawing = () => { drawing = false; };
+
+  canvas.onmousedown = startDrawing; canvas.onmousemove = draw; window.addEventListener('mouseup', stopDrawing);
+  canvas.ontouchstart = startDrawing; canvas.ontouchmove = draw; canvas.ontouchend = stopDrawing;
+
+  document.getElementById('clear-engineer-sig').onclick = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
+  document.getElementById('cancel-sign').onclick = () => modal.remove();
+
+  document.getElementById('confirm-sign').onclick = async () => {
+    const signature = canvas.toDataURL();
+    if (signature.length < 2000) { alert('Por favor, assine no campo indicado.'); return; }
+
     try {
-      const response = await fetch(`/api/reports/${id}/sign`, { method: 'PUT' });
+      const response = await fetch(`/api/reports/${id}/sign`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signature })
+      });
       if (response.ok) {
-        alert('Vistoria assinada digitalmente com sucesso!');
+        modal.remove();
+        alert('Laudo assinado e finalizado com sucesso!');
         await fetchReports();
       }
     } catch (err) {
       console.error('Erro ao assinar:', err);
+      alert('Erro técnico ao salvar assinatura.');
     }
-  }
+  };
 };
 
 const handleEngineerReject = async (id) => {
@@ -806,21 +863,30 @@ const showFullInspectionModal = (editId = null) => {
              </div>
           <!-- Passo 5: Assinaturas -->
           <div class="step-content" data-step="5">
-             <h3 style="font-size: 1rem; margin-bottom: 2rem; font-weight: 800;">Etapa 5: Assinaturas Digitais</h3>
+             <h3 style="font-size: 1rem; margin-bottom: 1.5rem; font-weight: 800;">Etapa 5: Assinaturas Digitais (Tablet)</h3>
+             <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2rem;">Utilize a caneta ou o dedo para assinar nos campos abaixo.</p>
              <div style="display: grid; gap: 1.5rem;">
-                <div style="background: var(--bg-elevated); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-medium); display: flex; align-items: center; gap: 1rem;">
-                   <input type="checkbox" id="sign-inspector" style="width: 24px; height: 24px;">
-                   <div>
-                      <p style="font-size: 0.85rem; font-weight: 700;">Assinatura do Vistoriador</p>
-                      <p style="font-size: 0.65rem; color: var(--text-muted);">${getCurrentUser().name} (ID: ${getCurrentUser().id})</p>
-                   </div>
+                <!-- Vistoriador -->
+                <div style="background: var(--bg-elevated); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-medium);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                       <div>
+                          <p style="font-size: 0.8rem; font-weight: 700;">Assinatura do Vistoriador</p>
+                          <p style="font-size: 0.65rem; color: var(--text-muted);">${getCurrentUser().name}</p>
+                       </div>
+                       <button type="button" class="btn btn-ghost clear-sig" data-target="canvas-inspector" style="font-size: 0.7rem; color: var(--danger);"><i class="fas fa-eraser"></i> Limpar</button>
+                    </div>
+                    <canvas id="canvas-inspector" width="600" height="200" style="background: #fff; border: 1.5px dashed #ccc; border-radius: 8px; width: 100%; height: 140px; touch-action: none; cursor: crosshair;"></canvas>
                 </div>
-                <div style="background: var(--bg-elevated); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-medium); display: flex; align-items: center; gap: 1rem;">
-                   <input type="checkbox" id="sign-owner" style="width: 24px; height: 24px;">
-                   <div>
-                      <p style="font-size: 0.85rem; font-weight: 700;">Assinatura do Proprietário / Responsável</p>
-                      <p style="font-size: 0.65rem; color: var(--text-muted);">Confirmar identidade conforme documento apresentado</p>
-                   </div>
+                <!-- Proprietário -->
+                <div style="background: var(--bg-elevated); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-medium);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                       <div>
+                          <p style="font-size: 0.8rem; font-weight: 700;">Assinatura do Responsável / Proprietário</p>
+                          <p style="font-size: 0.65rem; color: var(--text-muted);">${editData?.owner || 'Confirmação de vistoria'}</p>
+                       </div>
+                       <button type="button" class="btn btn-ghost clear-sig" data-target="canvas-owner" style="font-size: 0.7rem; color: var(--danger);"><i class="fas fa-eraser"></i> Limpar</button>
+                    </div>
+                    <canvas id="canvas-owner" width="600" height="200" style="background: #fff; border: 1.5px dashed #ccc; border-radius: 8px; width: 100%; height: 140px; touch-action: none; cursor: crosshair;"></canvas>
                 </div>
              </div>
           </div>
@@ -856,6 +922,68 @@ const showFullInspectionModal = (editId = null) => {
     if (currentStep === 4) {
       document.getElementById('photo-count').textContent = Object.keys(capturedPhotos).length;
     }
+
+    if (currentStep === 5) {
+      // Initialize Canvas logic and event listeners when reaching Step 5
+      initSignaturePads();
+    }
+  };
+
+  const initSignaturePads = () => {
+    ['canvas-inspector', 'canvas-owner'].forEach(id => {
+      const canvas = document.getElementById(id);
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#000';
+
+      let drawing = false;
+      const getPos = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+          x: (clientX - rect.left) * (canvas.width / rect.width),
+          y: (clientY - rect.top) * (canvas.height / rect.height)
+        };
+      };
+
+      const startDrawing = (e) => {
+        drawing = true;
+        const pos = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+      };
+
+      const draw = (e) => {
+        if (!drawing) return;
+        e.preventDefault();
+        const pos = getPos(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+      };
+
+      const stopDrawing = () => { drawing = false; };
+
+      canvas.onmousedown = startDrawing;
+      canvas.onmousemove = draw;
+      window.addEventListener('mouseup', stopDrawing);
+
+      canvas.ontouchstart = startDrawing;
+      canvas.ontouchmove = draw;
+      canvas.ontouchend = stopDrawing;
+    });
+
+    document.querySelectorAll('.clear-sig').forEach(btn => {
+      btn.onclick = () => {
+        const canvas = document.getElementById(btn.dataset.target);
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      };
+    });
   };
 
   // Camera Logic
@@ -937,10 +1065,15 @@ const showFullInspectionModal = (editId = null) => {
   document.getElementById('close-modal').onclick = () => modal.remove();
 
   document.getElementById('finalize-inspection').onclick = async () => {
-    if (!document.getElementById('sign-inspector').checked || !document.getElementById('sign-owner').checked) {
-      alert('As assinaturas do Vistoriador e Proprietário são obrigatórias para finalizar.');
+    const inspectorSig = document.getElementById('canvas-inspector').toDataURL();
+    const ownerSig = document.getElementById('canvas-owner').toDataURL();
+
+    // Quick heuristic check if canvas is blank (very simple)
+    if (inspectorSig.length < 2000 || ownerSig.length < 2000) {
+      alert('As assinaturas digitais são obrigatórias para finalizar o laudo.');
       return;
     }
+
     const checks = {};
     sections.forEach(sec => {
       let catStatus = 'CLEAR';
@@ -973,6 +1106,10 @@ const showFullInspectionModal = (editId = null) => {
       chassi: document.getElementById('chassi').value,
       checks,
       photos: capturedPhotos,
+      signatures: {
+        inspector: inspectorSig,
+        owner: ownerSig
+      },
       score: calculateScore(checks),
       inspector: getCurrentUser(),
       timestamp: new Date().toISOString()
@@ -1166,16 +1303,18 @@ const showReportDetails = (id) => {
 
       <!-- Rodapé Pericial de Assinaturas -->
       <div style="margin-top: 5rem; padding-top: 3rem; border-top: 2px solid #000; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;">
-         <div style="text-align: center; border-top: 1px solid #000; padding-top: 1rem;">
-            <p style="font-size: 0.6rem; color: #94a3b8; font-weight: 800; margin-bottom: 3.5rem; text-transform: uppercase;">Assinatura do Vistoriador</p>
-             <div style="font-size: 0.8rem; font-weight: 700; color: #000;">${report.inspector?.name || 'Vistoriador N/A'}</div>
-             <div style="font-size: 0.6rem; color: #64748b;">ID: ${report.inspector?.id || 'ID N/A'}</div>
+          <div style="text-align: center; border-top: 1px solid #000; padding-top: 1.5rem; position: relative;">
+              ${report.signatures?.inspector ? `<img src="${report.signatures.inspector}" style="position: absolute; top: -45px; left: 50%; transform: translateX(-50%); max-height: 90px; mix-blend-mode: multiply; pointer-events: none;">` : ''}
+              <p style="font-size: 0.6rem; color: #94a3b8; font-weight: 800; margin-bottom: 3rem; text-transform: uppercase;">Assinatura do Vistoriador</p>
+              <div style="font-size: 0.8rem; font-weight: 700; color: #000;">${report.inspector?.name || 'Vistoriador N/A'}</div>
+              <div style="font-size: 0.6rem; color: #64748b;">ID: ${report.inspector?.id || 'ID N/A'}</div>
           </div>
           
-          <div style="text-align: center; border-top: 1px solid #000; padding-top: 1rem;">
-             <p style="font-size: 0.6rem; color: #94a3b8; font-weight: 800; margin-bottom: 3.5rem; text-transform: uppercase;">Assinatura do Proprietário / Responsável</p>
-             <div style="font-size: 0.8rem; font-weight: 700; color: #000;">${report.owner || 'N/A'}</div>
-             <div style="font-size: 0.6rem; color: #64748b;">DOC: ${report.cpf ? maskData(report.cpf, 'CPF') : 'N/A'}</div>
+          <div style="text-align: center; border-top: 1px solid #000; padding-top: 1.5rem; position: relative;">
+              ${report.signatures?.owner ? `<img src="${report.signatures.owner}" style="position: absolute; top: -45px; left: 50%; transform: translateX(-50%); max-height: 90px; mix-blend-mode: multiply; pointer-events: none;">` : ''}
+              <p style="font-size: 0.6rem; color: #94a3b8; font-weight: 800; margin-bottom: 3rem; text-transform: uppercase;">Assinatura do Proprietário / Responsável</p>
+              <div style="font-size: 0.8rem; font-weight: 700; color: #000;">${report.owner || 'N/A'}</div>
+              <div style="font-size: 0.6rem; color: #64748b;">DOC: ${report.cpf ? maskData(report.cpf, 'CPF') : 'N/A'}</div>
           </div>
 
           <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
@@ -1189,9 +1328,9 @@ const showReportDetails = (id) => {
          </div>
       </div>
 
-      <!-- Assinatura do Engenheiro (Nova Linha) -->
       <div style="margin-top: 4rem; display: flex; justify-content: center;">
-         <div style="text-align: center; border-top: 1px solid #000; padding-top: 1rem; width: 350px;">
+         <div style="text-align: center; border-top: 1px solid #000; padding-top: 1.5rem; width: 350px; position: relative;">
+            ${report.signed_by_engineer && report.engineer_signature ? `<img src="${report.engineer_signature}" style="position: absolute; top: -50px; left: 50%; transform: translateX(-50%); max-height: 100px; mix-blend-mode: multiply; pointer-events: none;">` : ''}
             <p style="font-size: 0.6rem; color: #94a3b8; font-weight: 800; margin-bottom: 3.5rem; text-transform: uppercase;">Assinatura do Engenheiro Responsável Técnico</p>
             <div style="font-size: 0.8rem; font-weight: 700; color: #000;">${report.signed_by_engineer ? (users.find(u => u.role === 'ENGENHEIRO')?.name || 'ENGENHEIRO CADASTRADO') : '__________________________'}</div>
             <div style="font-size: 0.6rem; color: #64748b;">${report.signed_by_engineer ? `REGISTRO CREA: ${users.find(u => u.role === 'ENGENHEIRO')?.crea || 'N/A'}` : 'REGISTRO CREA / DATA'}</div>
