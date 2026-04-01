@@ -1368,10 +1368,19 @@ const showReportDetails = (id) => {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PREPARANDO PDF...';
     btn.disabled = true;
 
-    // Use a simpler, non-invasive approach. 
-    // We let html2pdf calculate the bounding box automatically.
-    // By providing windowWidth: 1200, html2canvas will simulate a desktop browser
-    // so that @media (max-width: 1024px) responsive rules DO NOT trigger inside the PDF!
+    // Temporary Style Block to anchor the report to the absolute top-left during capture
+    // This prevents html2canvas from capturing empty "margin: auto" white space or clipping the right side
+    const styleBlock = document.createElement('style');
+    styleBlock.innerHTML = `
+      .modal-overlay { justify-content: flex-start !important; align-items: flex-start !important; padding: 0 !important; overflow: hidden !important; }
+      #printable-report { margin: 0 !important; transform: none !important; left: 0 !important; top: 0 !important; }
+    `;
+    document.head.appendChild(styleBlock);
+
+    // Smooth scroll to top-left to avoid capture cutoff
+    const overlay = document.querySelector('.modal-overlay');
+    if (overlay) { overlay.scrollTop = 0; overlay.scrollLeft = 0; }
+
     const element = document.getElementById('printable-report');
 
     const opt = {
@@ -1382,7 +1391,7 @@ const showReportDetails = (id) => {
         scale: 2,
         useCORS: true,
         letterRendering: true,
-        windowWidth: 1200 // Forces desktop layout
+        windowWidth: 1200 // Forces desktop layout within the PDF capture to avoid mobile squashing
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
@@ -1391,11 +1400,13 @@ const showReportDetails = (id) => {
       btn.innerHTML = originalBtn;
       btn.disabled = false;
       [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
+      styleBlock.remove();
     }).catch(err => {
       console.error('Erro na exportação:', err);
       btn.innerHTML = 'ERRO AO GERAR';
       btn.disabled = false;
       [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
+      styleBlock.remove();
     });
   };
   if (document.getElementById('modal-sign-btn')) {
