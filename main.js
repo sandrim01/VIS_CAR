@@ -1210,6 +1210,9 @@ const showReportDetails = (id) => {
           <button id="print-pdf-btn" class="btn btn-primary" style="background: #000; color: #fff; border-radius: 4px; padding: 0.75rem 1.5rem;">
             <i class="fas fa-file-pdf"></i> EXPORTAR LAUDO COMPLETO (PDF)
           </button>
+          <button id="govbr-sign-btn" class="btn btn-outline" style="border: 1.5px solid #000; color: #000; font-weight: 850; font-size: 0.65rem; padding: 0.6rem 1rem; width: 100%; border-radius: 4px; margin-top: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <img src="https://www.gov.br/++theme++padrao_govbr/img/govbr-logo-large.png" style="height: 14px;"> ASSINAR COM GOV.BR (ITI)
+          </button>
           ${!report.signed_by_engineer && getCurrentUser().role === 'ENGENHEIRO' ? `
             <button id="modal-sign-btn" class="btn btn-primary" style="background: var(--success); color: #fff; border-radius: 4px; padding: 0.75rem 1.5rem; width: 100%; font-weight: 800; margin-bottom: 0.5rem;">
               <i class="fas fa-signature"></i> CONCORDAR E ASSINAR
@@ -1398,6 +1401,36 @@ const showReportDetails = (id) => {
       modal.remove();
     };
   }
+
+  document.getElementById('govbr-sign-btn').onclick = () => {
+    const modalGov = document.createElement('div');
+    modalGov.className = 'modal-overlay animate-in';
+    modalGov.style.zIndex = '3000';
+    modalGov.innerHTML = `
+      <div style="background: white; padding: 2.5rem; border-radius: 12px; max-width: 500px; text-align: center; color: #000; font-family: Inter, sans-serif; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+         <img src="https://www.gov.br/++theme++padrao_govbr/img/govbr-logo-large.png" style="height: 40px; margin-bottom: 3.5rem;">
+         <h2 style="font-weight: 950; margin-bottom: 1.5rem; text-transform: uppercase; font-size: 1.1rem; letter-spacing: 1px;">Assinatura Digital Gov.br</h2>
+         <p style="font-size: 0.85rem; line-height: 1.6; color: #475569; margin-bottom: 2rem;">
+            O laudo pericial atual será validado juridicamente através do portal oficial do Governo Federal.
+            <br><br>
+            <strong>PASSO 1:</strong> Clique em baixar para gerar o arquivo PDF.
+            <br>
+            <strong>PASSO 2:</strong> Use o botão do Assinador ITI para enviar o arquivo e assinar com seu CPF.
+         </p>
+         <div style="display: grid; gap: 0.8rem;">
+            <button id="gov-download-first" class="btn btn-primary" style="background: #000; width: 100%; font-weight: 800; padding: 1rem;"><i class="fas fa-file-download"></i> 1. BAIXAR LAUDO PDF</button>
+            <a href="https://assinador.iti.br/" target="_blank" class="btn btn-outline" style="border: 2px solid #000; color: #000; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem; font-weight: 800;"><i class="fas fa-external-link-alt"></i> 2. IR PARA O ASSINADOR GOV.BR</a>
+            <button id="close-gov-modal" class="btn btn-ghost" style="margin-top: 1rem; font-size: 0.7rem; color: #64748b;">FECHAR INSTRUÇÕES</button>
+         </div>
+      </div>
+    `;
+    document.body.appendChild(modalGov);
+
+    document.getElementById('close-gov-modal').onclick = () => modalGov.remove();
+    document.getElementById('gov-download-first').onclick = () => {
+      document.getElementById('print-pdf-btn').click();
+    };
+  };
 };
 
 
