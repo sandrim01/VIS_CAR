@@ -1364,68 +1364,39 @@ const showReportDetails = (id) => {
     // Hide UI
     [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'hidden'; });
 
-    // Viewport Override Method: Force the rendering engine to calculate layout at desktop width
     const originalBtn = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> BAIXANDO...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PREPARANDO PDF...';
     btn.disabled = true;
 
-    const viewportMeta = document.querySelector('meta[name="viewport"]');
-    const originalViewport = viewportMeta ? viewportMeta.content : '';
-    if (viewportMeta) {
-      // Force device scale to 1200px instantly so flexbox calculates columns properly
-      viewportMeta.content = 'width=1200, initial-scale=1.0, maximum-scale=1.0';
-    }
-
+    // Use a simpler, non-invasive approach. 
+    // We let html2pdf calculate the bounding box automatically.
+    // By providing windowWidth: 1200, html2canvas will simulate a desktop browser
+    // so that @media (max-width: 1024px) responsive rules DO NOT trigger inside the PDF!
     const element = document.getElementById('printable-report');
-    const originalWidth = element.style.width;
-    const originalMinWidth = element.style.minWidth;
-    const originalMargin = element.style.margin;
 
-    // Fix element strictly
-    element.style.width = '850px';
-    element.style.minWidth = '850px';
-    element.style.maxWidth = '850px';
-    element.style.margin = '0 auto';
+    const opt = {
+      margin: [10, 0, 10, 0],
+      filename: `LAUDO_${report.plate || 'VISTORIA'}_${new Date().getTime()}.pdf`,
+      image: { type: 'jpeg', quality: 1.0 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true,
+        windowWidth: 1200 // Forces desktop layout
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
 
-    // Wait 500ms for browser paint cycle to reflow the layout
-    setTimeout(() => {
-      const opt = {
-        margin: [10, 0, 10, 0],
-        filename: `LAUDO_${report.plate || 'VISTORIA'}_${new Date().getTime()}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          letterRendering: true,
-          width: 850,
-          windowWidth: 1200, // Sync with viewport
-          scrollX: 0,
-          scrollY: 0
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
-
-      html2pdf().set(opt).from(element).save().then(() => {
-        if (viewportMeta) viewportMeta.content = originalViewport;
-        element.style.width = originalWidth;
-        element.style.minWidth = originalMinWidth;
-        element.style.margin = originalMargin;
-
-        btn.innerHTML = originalBtn;
-        btn.disabled = false;
-        [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
-      }).catch(err => {
-        console.error(err);
-        if (viewportMeta) viewportMeta.content = originalViewport;
-        element.style.width = originalWidth;
-        element.style.minWidth = originalMinWidth;
-        element.style.margin = originalMargin;
-
-        btn.innerHTML = 'ERRO AO GERAR';
-        btn.disabled = false;
-        [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
-      });
-    }, 500);
+    html2pdf().set(opt).from(element).save().then(() => {
+      btn.innerHTML = originalBtn;
+      btn.disabled = false;
+      [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
+    }).catch(err => {
+      console.error('Erro na exportação:', err);
+      btn.innerHTML = 'ERRO AO GERAR';
+      btn.disabled = false;
+      [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
+    });
   };
   if (document.getElementById('modal-sign-btn')) {
     document.getElementById('modal-sign-btn').onclick = () => {
