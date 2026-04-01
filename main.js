@@ -1226,19 +1226,19 @@ const showReportDetails = (id) => {
       </div>
 
       <!-- Dados Primeiros: Proprietário e Veículo -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; margin-bottom: 4rem; background: #f8fafc; padding: 2rem; border-radius: 8px;">
-         <div style="border-right: 1px solid #e2e8f0; padding-right: 4rem;">
+      <div style="display: flex; justify-content: space-between; align-items: stretch; margin-bottom: 4rem; background: #f8fafc; padding: 2rem; border-radius: 8px;">
+         <div style="width: 45%; border-right: 1px solid #e2e8f0; padding-right: 2rem;">
             <h3 style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1.5rem; font-weight: 900;">Dados do Proprietário</h3>
             <p style="font-size: 1.25rem; font-weight: 900; margin-bottom: 0.5rem; color: #000;">${report.owner}</p>
             <p style="font-size: 0.9rem; color: #64748b; font-family: monospace;">DOC/CPF: ${maskData(report.cpf, 'CPF')}</p>
          </div>
-         <div>
+         <div style="width: 50%;">
             <h3 style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1.5rem; font-weight: 900;">Dados da Unidade Móvel</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; font-size: 0.9rem;">
-               <div><p style="color: #94a3b8; font-size: 0.7rem; font-weight: 800; margin-bottom: 0.2rem;">PLACA</p><p style="font-weight: 900; font-family: monospace; font-size: 1.1rem; border: 1px solid #000; padding: 0.2rem 0.5rem; display: inline-block;">${report.plate}</p></div>
-               <div><p style="color: #94a3b8; font-size: 0.7rem; font-weight: 800; margin-bottom: 0.2rem;">MARCA/MODELO</p><p style="font-weight: 900; color: #000;">${report.model}</p></div>
-               <div><p style="color: #94a3b8; font-size: 0.7rem; font-weight: 800; margin-bottom: 0.2rem;">CHASSI (VIN)</p><p style="font-weight: 900; font-family: monospace; color: #000;">${maskData(report.chassi, 'CHASSI')}</p></div>
-               <div><p style="color: #94a3b8; font-size: 0.7rem; font-weight: 800; margin-bottom: 0.2rem;">KM ATUAL</p><p style="font-weight: 900; color: #000;">${report.km}</p></div>
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; font-size: 0.9rem;">
+               <div style="width: 45%; margin-bottom: 1.5rem;"><p style="color: #94a3b8; font-size: 0.7rem; font-weight: 800; margin-bottom: 0.2rem;">PLACA</p><p style="font-weight: 900; font-family: monospace; font-size: 1.1rem; border: 1px solid #000; padding: 0.2rem 0.5rem; display: inline-block;">${report.plate}</p></div>
+               <div style="width: 45%; margin-bottom: 1.5rem;"><p style="color: #94a3b8; font-size: 0.7rem; font-weight: 800; margin-bottom: 0.2rem;">MARCA/MODELO</p><p style="font-weight: 900; color: #000;">${report.model}</p></div>
+               <div style="width: 45%;"><p style="color: #94a3b8; font-size: 0.7rem; font-weight: 800; margin-bottom: 0.2rem;">CHASSI (VIN)</p><p style="font-weight: 900; font-family: monospace; color: #000;">${maskData(report.chassi, 'CHASSI')}</p></div>
+               <div style="width: 45%;"><p style="color: #94a3b8; font-size: 0.7rem; font-weight: 800; margin-bottom: 0.2rem;">KM ATUAL</p><p style="font-weight: 900; color: #000;">${report.km}</p></div>
             </div>
          </div>
       </div>
@@ -1247,9 +1247,9 @@ const showReportDetails = (id) => {
       ${report.photos && Object.keys(report.photos).length > 0 ? `
         <div style="margin-bottom: 5rem;">
           <h3 style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 2rem; font-weight: 900; text-align: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem;">Evidências Fotográficas do Ato Pericial</h3>
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between;">
             ${Object.entries(report.photos).map(([label, src]) => `
-              <div style="border: 2px solid #f1f5f9; border-radius: 4px; overflow: hidden; background: #fff;">
+              <div style="width: 31%; margin-bottom: 1.5rem; border: 2px solid #f1f5f9; border-radius: 4px; overflow: hidden; background: #fff;">
                 <img src="${src}" style="width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block;">
                 <div style="padding: 0.75rem; font-size: 0.65rem; font-weight: 900; text-align: center; color: #334155; background: #f8fafc; border-top: 1px solid #f1f5f9; text-transform: uppercase;">PHOTO: ${label}</div>
               </div>
@@ -1261,7 +1261,7 @@ const showReportDetails = (id) => {
       <!-- CHECKLIST DETALHADO POR CATEGORIA -->
       <div style="margin-bottom: 5rem;">
         <h3 style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 2rem; font-weight: 900; text-align: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem;">Checklist Técnico de Avaliação Pericial</h3>
-        <div style="display: grid; gap: 3rem;">
+        <div style="display: flex; flex-direction: column; gap: 3rem;">
            ${Object.entries(CATEGORIES).map(([key, cat]) => {
     const catData = report.checks?.[key] || {};
     const catItems = catData.items || {};
@@ -1273,16 +1273,16 @@ const showReportDetails = (id) => {
                      <span style="font-weight: 900; font-size: 1rem; text-transform: uppercase;">${cat.name}</span>
                      <span style="font-weight: 900; font-size: 0.8rem; color: ${catColor}; border: 1.5px solid ${catColor}; padding: 0.3rem 1rem; border-radius: 4px;">PARECER: ${catData.status === 'CLEAR' ? 'APROVADO' : catData.status === 'WARNING' ? 'COM APONTAMENTO' : 'REPROVADO'}</span>
                   </div>
-                  <div style="padding: 1.5rem 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  <div style="padding: 1.5rem 2rem; display: flex; flex-wrap: wrap; justify-content: space-between;">
                      ${Object.entries(catItems).length > 0 ? Object.entries(catItems).map(([item, data]) => {
       const itemColor = data.status === 'CLEAR' ? '#22c55e' : data.status === 'WARNING' ? '#eab308' : '#ef4444';
       return `
-                          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px dashed #f1f5f9;">
+                          <div style="width: 48%; display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px dashed #f1f5f9; margin-bottom: 0.5rem; box-sizing: border-box;">
                              <span style="font-size: 0.85rem; font-weight: 700; color: #475569;">${item}</span>
                              <span style="font-size: 0.75rem; font-weight: 900; color: ${itemColor};">${data.status === 'CLEAR' ? 'CONFORME' : data.status === 'WARNING' ? 'ANOMALIA' : 'NÃO CONFORME'}</span>
                           </div>
                         `;
-    }).join('') : `<p style="grid-column: span 2; font-size: 0.8rem; color: #94a3b8; text-align: center;">Resultados consolidados em conformidade com o padrão técnico.</p>`}
+    }).join('') : `<p style="width: 100%; font-size: 0.8rem; color: #94a3b8; text-align: center;">Resultados consolidados em conformidade com o padrão técnico.</p>`}
                   </div>
                   ${catData.remanche || catData.motorTrocadoSemCadastro ? `
                     <div style="background: #fef2f2; padding: 1rem 2rem; border-top: 1px solid #fee2e2; color: #b91c1c; font-size: 0.75rem; font-weight: 900;">
@@ -1309,8 +1309,8 @@ const showReportDetails = (id) => {
       </div>
 
       <!-- Rodapé Pericial de Assinaturas -->
-      <div style="margin-top: 5rem; padding-top: 3rem; border-top: 2px solid #000; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;">
-          <div style="text-align: center; border-top: 1px solid #000; padding-top: 1.5rem; position: relative;">
+      <div style="margin-top: 5rem; padding-top: 3rem; border-top: 2px solid #000; display: flex; justify-content: space-between; align-items: flex-start;">
+          <div style="text-align: center; border-top: 1px solid #000; padding-top: 1.5rem; position: relative; width: 30%;">
               ${report.signatures && (typeof report.signatures === 'object' ? report.signatures.inspector : JSON.parse(report.signatures).inspector) ? `
                 <img src="${typeof report.signatures === 'object' ? report.signatures.inspector : JSON.parse(report.signatures).inspector}" style="position: absolute; top: -55px; left: 50%; transform: translateX(-50%); max-height: 110px; mix-blend-mode: multiply; pointer-events: none; z-index: 10;">
               ` : ''}
@@ -1319,7 +1319,7 @@ const showReportDetails = (id) => {
               <div style="font-size: 0.6rem; color: #64748b;">ID: ${report.inspector?.id || 'ID N/A'}</div>
           </div>
           
-          <div style="text-align: center; border-top: 1px solid #000; padding-top: 1.5rem; position: relative;">
+          <div style="text-align: center; border-top: 1px solid #000; padding-top: 1.5rem; position: relative; width: 30%;">
               ${report.signatures && (typeof report.signatures === 'object' ? report.signatures.owner : JSON.parse(report.signatures).owner) ? `
                 <img src="${typeof report.signatures === 'object' ? report.signatures.owner : JSON.parse(report.signatures).owner}" style="position: absolute; top: -55px; left: 50%; transform: translateX(-50%); max-height: 110px; mix-blend-mode: multiply; pointer-events: none; z-index: 10;">
               ` : ''}
@@ -1328,12 +1328,12 @@ const showReportDetails = (id) => {
               <div style="font-size: 0.6rem; color: #64748b;">DOC: ${report.cpf ? maskData(report.cpf, 'CPF') : 'N/A'}</div>
           </div>
 
-          <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 30%;">
              <div style="font-family: monospace; font-size: 0.55rem; color: #64748b; line-height: 1.6; text-align: left; margin-bottom: 1rem; width: 100%;">
                  <p style="font-weight: 900; color: #000; margin-bottom: 0.3rem;">HASH DE AUTENTICIDADE</p>
                  <span style="word-break: break-all;">${report.hash || 'N/A'}</span>
              </div>
-            <div style="width: 100px; height: 100px; background: #fff; border: 1.5px solid #000; padding: 0.5rem; border-radius: 4px; display: grid; place-items: center;">
+            <div style="width: 100px; height: 100px; background: #fff; border: 1.5px solid #000; padding: 0.5rem; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
                <i class="fas fa-qrcode fa-4x" style="opacity: 0.05;"></i>
             </div>
          </div>
