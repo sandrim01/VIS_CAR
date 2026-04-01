@@ -667,6 +667,10 @@ body {
 
 /* Print Optimization for the New Report */
 @media print {
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
 
     .sidebar,
     .header,
@@ -678,35 +682,25 @@ body {
         display: none !important;
     }
 
-    .main {
-        overflow: visible !important;
-        background: white !important;
-    }
-
-    .modal-overlay {
-        position: absolute !important;
-        background: white !important;
-        color: #000 !important;
+    body,
+    html,
+    #app,
+    .main,
+    .modal-overlay,
+    .modal-overlay>div {
+        margin: 0 !important;
         padding: 0 !important;
-        display: block !important;
+        background: white !important;
         height: auto !important;
         overflow: visible !important;
-        top: 0 !important;
-        left: 0 !important;
-    }
-
-    .modal-overlay>div {
+        display: block !important;
         width: 100% !important;
-        max-width: none !important;
+        position: relative !important;
         box-shadow: none !important;
         border: none !important;
-        padding: 0 !important;
-        height: auto !important;
-        overflow: visible !important;
-    }
-
-    body {
-        background: white !important;
+        max-width: none !important;
+        left: 0 !important;
+        top: 0 !important;
     }
 }
 
@@ -722,4 +716,48 @@ body {
     z-index: 0;
     text-transform: uppercase;
     white-space: nowrap;
+}
+
+/* Explicit PDF/Print Export Styles */
+#printable-report,
+#printable-report * {
+    color: #000000 !important;
+    border-color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+
+#printable-report {
+    background-color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+#printable-report img {
+    mix-blend-mode: multiply !important;
+}
+
+#printable-report .badge-success {
+    background: #eefdf3 !important;
+    border: 1px solid #22c55e !important;
+    color: #166534 !important;
+}
+
+#printable-report .badge-danger {
+    background: #fef2f2 !important;
+    border: 1px solid #ef4444 !important;
+    color: #991b1b !important;
+}
+
+#printable-report .badge-warning {
+    background: #fffbeb !important;
+    border: 1px solid #eab308 !important;
+    color: #854d0e !important;
+}
+
+#printable-report i {
+    color: #000000 !important;
+}
+
+#printable-report .report-watermark {
+    color: rgba(0, 0, 0, 0.03) !important;
 }
