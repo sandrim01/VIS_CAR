@@ -861,6 +861,7 @@ const showFullInspectionModal = (editId = null) => {
                   <li><i class="fas fa-check-circle" style="color: var(--success);"></i> Assinatura digital pronta</li>
                 </ul>
              </div>
+          </div>
           <!-- Passo 5: Assinaturas -->
           <div class="step-content" data-step="5">
              <h3 style="font-size: 1rem; margin-bottom: 1.5rem; font-weight: 800;">Etapa 5: Assinaturas Digitais (Tablet)</h3>
