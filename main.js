@@ -1365,48 +1365,58 @@ const showReportDetails = (id) => {
     [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'hidden'; });
 
     const originalBtn = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PREPARANDO PDF...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> GERANDO PDF...';
     btn.disabled = true;
-
-    // Temporary Style Block to anchor the report to the absolute top-left during capture
-    // This prevents html2canvas from capturing empty "margin: auto" white space or clipping the right side
-    const styleBlock = document.createElement('style');
-    styleBlock.innerHTML = `
-      .modal-overlay { justify-content: flex-start !important; align-items: flex-start !important; padding: 0 !important; overflow: hidden !important; }
-      #printable-report { margin: 0 !important; transform: none !important; left: 0 !important; top: 0 !important; }
-    `;
-    document.head.appendChild(styleBlock);
-
-    // Smooth scroll to top-left to avoid capture cutoff
-    const overlay = document.querySelector('.modal-overlay');
-    if (overlay) { overlay.scrollTop = 0; overlay.scrollLeft = 0; }
 
     const element = document.getElementById('printable-report');
 
+    // Remove "margin: 0 auto" from the clone to prevent any centering offsets in the isolated DOM
+    const clone = element.cloneNode(true);
+    clone.style.margin = '0';
+    clone.style.transform = 'none';
+
+    // Create a pristine, isolated HTML document string.
+    // This entirely bypasses the user's browser window, responsive media queries, and flex parents,
+    // guaranteeing a perfect 850px render regardless of whether they are on a tablet or PC.
+    const cleanHtml = `
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { background: white; width: 850px; overflow: hidden; font-family: 'Inter', sans-serif; }
+          </style>
+        </head>
+        <body>
+          ${clone.outerHTML}
+        </body>
+      </html>
+    `;
+
     const opt = {
-      margin: [10, 0, 10, 0],
+      margin: 10, // 1cm margin all around the A4 page
       filename: `LAUDO_${report.plate || 'VISTORIA'}_${new Date().getTime()}.pdf`,
       image: { type: 'jpeg', quality: 1.0 },
       html2canvas: {
         scale: 2,
         useCORS: true,
         letterRendering: true,
-        windowWidth: 1200 // Forces desktop layout within the PDF capture to avoid mobile squashing
+        width: 850,
+        height: clone.scrollHeight || undefined
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().set(opt).from(element).save().then(() => {
+    html2pdf().set(opt).from(cleanHtml).save().then(() => {
       btn.innerHTML = originalBtn;
       btn.disabled = false;
       [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
-      styleBlock.remove();
     }).catch(err => {
       console.error('Erro na exportação:', err);
       btn.innerHTML = 'ERRO AO GERAR';
       btn.disabled = false;
       [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
-      styleBlock.remove();
     });
   };
   if (document.getElementById('modal-sign-btn')) {
