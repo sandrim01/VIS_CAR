@@ -1370,29 +1370,23 @@ const showReportDetails = (id) => {
 
     const element = document.getElementById('printable-report');
 
-    // Remove "margin: 0 auto" from the clone to prevent any centering offsets in the isolated DOM
+    // Create a pristine, live clone attached directly to the body
+    // This entirely bypasses the user's modal overlay centering and responsive media queries
+    // while ensuring html2canvas can read standard live DOM metrics (fixing the blank PDF bug).
     const clone = element.cloneNode(true);
+    clone.id = 'temp-pdf-clone';
+    clone.style.position = 'absolute';
+    clone.style.top = '0';
+    clone.style.left = '0';
     clone.style.margin = '0';
     clone.style.transform = 'none';
+    clone.style.width = '850px';
+    clone.style.minWidth = '850px';
+    clone.style.maxWidth = '850px';
+    clone.style.backgroundColor = 'white';
+    clone.style.zIndex = '-9999';
 
-    // Create a pristine, isolated HTML document string.
-    // This entirely bypasses the user's browser window, responsive media queries, and flex parents,
-    // guaranteeing a perfect 850px render regardless of whether they are on a tablet or PC.
-    const cleanHtml = `
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { background: white; width: 850px; overflow: hidden; font-family: 'Inter', sans-serif; }
-          </style>
-        </head>
-        <body>
-          ${clone.outerHTML}
-        </body>
-      </html>
-    `;
+    document.body.appendChild(clone);
 
     const opt = {
       margin: 10, // 1cm margin all around the A4 page
@@ -1403,21 +1397,26 @@ const showReportDetails = (id) => {
         useCORS: true,
         letterRendering: true,
         width: 850,
-        height: clone.scrollHeight || undefined
+        windowWidth: 1200 // Force generic desktop layout sizing bounds
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().set(opt).from(cleanHtml).save().then(() => {
-      btn.innerHTML = originalBtn;
-      btn.disabled = false;
-      [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
-    }).catch(err => {
-      console.error('Erro na exportação:', err);
-      btn.innerHTML = 'ERRO AO GERAR';
-      btn.disabled = false;
-      [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
-    });
+    // Allow the browser a tiny window to paint the clone so dimensions are calculable
+    setTimeout(() => {
+      html2pdf().set(opt).from(clone).save().then(() => {
+        btn.innerHTML = originalBtn;
+        btn.disabled = false;
+        [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
+        if (clone) clone.remove();
+      }).catch(err => {
+        console.error('Erro na exportação:', err);
+        btn.innerHTML = 'ERRO AO GERAR';
+        btn.disabled = false;
+        [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
+        if (clone) clone.remove();
+      });
+    }, 150);
   };
   if (document.getElementById('modal-sign-btn')) {
     document.getElementById('modal-sign-btn').onclick = () => {
