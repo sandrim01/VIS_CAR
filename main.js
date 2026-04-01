@@ -184,7 +184,7 @@ const renderApp = () => {
                       ${r.score?.status || 'N/A'}
                     </span>
                     <div style="margin-top: 0.4rem;">
-                        ${r.signed_by_engineer ? '<span style="font-size: 0.6rem; color: var(--success); font-weight: 700;"><i class="fas fa-check-double"></i> ASSINADO ENG</span>' : '<span style="font-size: 0.6rem; color: var(--warning); font-weight: 700;"><i class="fas fa-clock"></i> AGUARD. ENG</span>'}
+                        ${r.overall_status === 'REVISION_REQUESTED' ? '<span style="font-size: 0.6rem; color: var(--danger); font-weight: 700;"><i class="fas fa-undo"></i> REVISÃO SOLICITADA</span>' : (r.signed_by_engineer ? '<span style="font-size: 0.6rem; color: var(--success); font-weight: 700;"><i class="fas fa-check-double"></i> ASSINADO ENG</span>' : '<span style="font-size: 0.6rem; color: var(--warning); font-weight: 700;"><i class="fas fa-clock"></i> AGUARD. ENG</span>')}
                     </div>
                   </td>
                   <td>
@@ -316,6 +316,43 @@ const renderApp = () => {
           </div>
         </div>
       `;
+    } else if (activeSection === 'revisoes') {
+      const myRevisions = reports.filter(r => r.overall_status === 'REVISION_REQUESTED');
+      mainContent = `
+        <div class="container animate-in">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h3 style="font-size: 1.25rem; font-weight: 700;">Vistorias Devolvidas p/ Revisão</h3>
+            <span class="badge badge-danger">${myRevisions.length} Requerem Ajuste</span>
+          </div>
+          <div class="data-table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Data Original</th>
+                  <th>Veículo</th>
+                  <th>Placa</th>
+                  <th>Motivo da Devolução</th>
+                  <th style="text-align: right;">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${myRevisions.length === 0 ? '<tr><td colspan="5" style="text-align: center; padding: 4rem; color: var(--text-muted);">Nenhum pedido de revisão pendente.</td></tr>' : ''}
+                ${myRevisions.map(r => `
+                  <tr>
+                    <td>${r.created_at ? new Date(r.created_at).toLocaleDateString() : 'N/A'}</td>
+                    <td><div style="font-weight: 700; color: #fff;">${r.model}</div></td>
+                    <td><span style="font-family: monospace;">${r.plate}</span></td>
+                    <td><div style="color: var(--danger); font-size: 0.8rem; font-weight: 600;">"${r.engineer_comment || 'Sem comentário detalhado'}"</div></td>
+                    <td style="text-align: right;">
+                      <button class="btn btn-primary edit-report-btn" data-id="${r.id}" style="font-size: 0.7rem;"><i class="fas fa-edit"></i> REFAZER / AJUSTAR</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
     }
 
     app.innerHTML = `
@@ -328,7 +365,8 @@ const renderApp = () => {
         <p class="nav-label">Menu Principal</p>
         <div class="nav-link ${activeSection === 'dashboard' ? 'active' : ''}" data-nav="dashboard"><i class="fas fa-grid-2-horizontal"></i> Dashboard</div>
         <div class="nav-link ${activeSection === 'vistorias' ? 'active' : ''}" data-nav="vistorias"><i class="fas fa-clipboard-list"></i> Vistorias</div>
-        ${user.role === 'ENGENHEIRO' ? `<div class="nav-link ${activeSection === 'pendentes' ? 'active' : ''}" data-nav="pendentes"><i class="fas fa-signature"></i> Vistorias a assinar</div>` : ''}
+        ${user.role === 'ENGENHEIRO' ? `<div class="nav-link ${activeSection === 'pendentes' ? 'active' : ''}" data-nav="pendentes"><i class="fas fa-signature"></i> Vistorias a assinar <span style="background:var(--warning); color:#000; font-size:0.6rem; padding:2px 6px; border-radius:10px; margin-left:auto;">${reports.filter(r => !r.signed_by_engineer).length}</span></div>` : ''}
+        ${user.role === 'VISTORIADOR' || user.role === 'ADMINISTRADOR' ? `<div class="nav-link ${activeSection === 'revisoes' ? 'active' : ''}" data-nav="revisoes"><i class="fas fa-exclamation-circle"></i> Vistorias p/ Revisão <span style="background:var(--danger); color:#fff; font-size:0.6rem; padding:2px 6px; border-radius:10px; margin-left:auto;">${reports.filter(r => r.overall_status === 'REVISION_REQUESTED').length}</span></div>` : ''}
         <div class="nav-link ${activeSection === 'analytics' ? 'active' : ''}" data-nav="analytics"><i class="fas fa-chart-line"></i> Analytics</div>
       </div>
 
@@ -399,6 +437,12 @@ const renderApp = () => {
         btn.onclick = () => showReportDetails(btn.dataset.id);
       });
     }
+
+    if (activeSection === 'revisoes') {
+      document.querySelectorAll('.edit-report-btn').forEach(btn => {
+        btn.onclick = () => startInspection(btn.dataset.id);
+      });
+    }
   } catch (err) {
     console.error('Fatal application error:', err);
     app.innerHTML = `
@@ -436,6 +480,25 @@ const handleEngineerSign = async (id) => {
       }
     } catch (err) {
       console.error('Erro ao assinar:', err);
+    }
+  }
+};
+
+const handleEngineerReject = async (id) => {
+  const comment = prompt('Por favor, descreva o motivo da devolução para o vistoriador:');
+  if (comment) {
+    try {
+      const response = await fetch(`/api/reports/${id}/reject`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment })
+      });
+      if (response.ok) {
+        alert('Vistoria devolvida para revisão com sucesso.');
+        await fetchReports();
+      }
+    } catch (err) {
+      console.error('Erro ao rejeitar:', err);
     }
   }
 };
@@ -599,12 +662,13 @@ const showConsentModal = () => {
   };
 };
 
-const showFullInspectionModal = () => {
+const showFullInspectionModal = (editId = null) => {
   const modal = document.createElement('div');
   modal.className = 'modal-overlay animate-in';
 
+  const editData = editId ? reports.find(r => r.id === editId) : null;
   let currentStep = 1;
-  const capturedPhotos = {};
+  const capturedPhotos = editData ? { ...editData.photos } : {};
 
   const sections = [
     { key: 'ESTRUTURA', name: 'Estrutura & Chassi', weight: 40, items: ['Longarina Dianteira', 'Longarina Traseira', 'Colunas A/B/C', 'Painel Frontal', 'Painel Traseiro', 'Folha de Teto', 'Assoalho Porta Malas', 'Caixa de Ar/Soleiras', 'Numeração de Chassi', 'Numeração de Motor'] },
@@ -641,13 +705,14 @@ const showFullInspectionModal = () => {
           <!-- Passo 1: Dados do Veículo -->
           <div class="step-content active" data-step="1">
             <h3 style="font-size: 1rem; margin-bottom: 2rem; font-weight: 800;">Etapa 1: Identificação do Veículo</h3>
+            ${editData ? `<div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border: 1px solid var(--danger); font-size: 0.75rem; color: var(--danger); font-weight: 700;"> MOTIVO DA REVISÃO: "${editData.engineer_comment}" </div>` : ''}
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-               <div class="form-group"><label>Proprietário</label><input type="text" id="owner" required></div>
-               <div class="form-group"><label>CPF/CNPJ</label><input type="text" id="cpf" required></div>
-               <div class="form-group"><label>Chassi (VIN)</label><input type="text" id="chassi" required></div>
-               <div class="form-group"><label>Marca/Modelo</label><input type="text" id="model" required></div>
-               <div class="form-group"><label>Placa</label><input type="text" id="plate" required></div>
-               <div class="form-group"><label>KM Atual</label><input type="number" id="km" required></div>
+               <div class="form-group"><label>Proprietário</label><input type="text" id="owner" value="${editData?.owner || ''}" required></div>
+               <div class="form-group"><label>CPF/CNPJ</label><input type="text" id="cpf" value="${editData?.cpf || ''}" required></div>
+               <div class="form-group"><label>Chassi (VIN)</label><input type="text" id="chassi" value="${editData?.chassi || ''}" required></div>
+               <div class="form-group"><label>Marca/Modelo</label><input type="text" id="model" value="${editData?.model || ''}" required></div>
+               <div class="form-group"><label>Placa</label><input type="text" id="plate" value="${editData?.plate || ''}" required></div>
+               <div class="form-group"><label>KM Atual</label><input type="number" id="km" value="${editData?.km || ''}" required></div>
             </div>
           </div>
 
@@ -680,14 +745,14 @@ const showFullInspectionModal = () => {
                     <div class="check-item">
                       <div class="check-item-header">
                          <span class="check-item-label">${item}</span>
-                         <div class="status-toggle" data-category="${sec.key}" data-item="${item}">
-                            <button type="button" class="status-btn active success" data-val="CLEAR">✅</button>
-                            <button type="button" class="status-btn" data-val="WARNING">⚠️</button>
-                            <button type="button" class="status-btn" data-val="FAIL">❌</button>
-                         </div>
-                      </div>
-                      <textarea class="comment-input" rows="1" placeholder="Parecer técnico..."></textarea>
-                    </div>
+                             <div class="status-toggle" data-category="${sec.key}" data-item="${item}">
+                                <button type="button" class="status-btn ${!editData || (editData.checks?.[sec.key]?.items?.[item]?.status === 'CLEAR') ? 'active success' : ''}" data-val="CLEAR">✅</button>
+                                <button type="button" class="status-btn ${editData?.checks?.[sec.key]?.items?.[item]?.status === 'WARNING' ? 'active warning' : ''}" data-val="WARNING">⚠️</button>
+                                <button type="button" class="status-btn ${editData?.checks?.[sec.key]?.items?.[item]?.status === 'FAIL' ? 'active danger' : ''}" data-val="FAIL">❌</button>
+                             </div>
+                          </div>
+                          <textarea class="comment-input" rows="1" placeholder="Parecer técnico..." value="${editData?.checks?.[sec.key]?.items?.[item]?.comment || ''}"></textarea>
+                        </div>
                   `).join('')}
                 </div>
               </div>
@@ -875,7 +940,7 @@ const showFullInspectionModal = () => {
     });
 
     const report = {
-      id: formatUUID(),
+      id: editData ? editData.id : formatUUID(),
       plate: document.getElementById('plate').value.toUpperCase(),
       model: document.getElementById('model').value,
       km: document.getElementById('km').value,
@@ -892,16 +957,17 @@ const showFullInspectionModal = () => {
     report.hash = await generateHash(report);
 
     try {
-      await fetch('/api/reports', {
-        method: 'POST',
+      await fetch(editData ? `/api/reports/${editData.id}` : '/api/reports', {
+        method: editData ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(report)
       });
       await fetchReports();
       modal.remove();
+      alert(editData ? 'Vistoria re-enviada com sucesso!' : 'Vistoria salva com sucesso!');
     } catch (err) {
       console.error('Erro ao salvar relatório:', err);
-      alert('Falha ao salvar no banco de dados.');
+      alert('Falha ao conectar com o banco de dados.');
     }
   };
 
@@ -980,8 +1046,11 @@ const showReportDetails = (id) => {
             <i class="fas fa-file-pdf"></i> EXPORTAR LAUDO COMPLETO (PDF)
           </button>
           ${!report.signed_by_engineer && getCurrentUser().role === 'ENGENHEIRO' ? `
-            <button id="modal-sign-btn" class="btn btn-primary" style="background: var(--success); color: #fff; border-radius: 4px; padding: 0.75rem 1.5rem; width: 100%; font-weight: 800;">
-              <i class="fas fa-signature"></i> CONCORDAR E ASSINAR LAUDO
+            <button id="modal-sign-btn" class="btn btn-primary" style="background: var(--success); color: #fff; border-radius: 4px; padding: 0.75rem 1.5rem; width: 100%; font-weight: 800; margin-bottom: 0.5rem;">
+              <i class="fas fa-signature"></i> CONCORDAR E ASSINAR
+            </button>
+            <button id="modal-reject-btn" class="btn btn-primary" style="background: var(--danger); color: #fff; border-radius: 4px; padding: 0.75rem 1.5rem; width: 100%; font-weight: 800;">
+              <i class="fas fa-undo"></i> RECOMENDAR REVISÃO
             </button>
           ` : ''}
           <div style="font-size: 0.65rem; font-weight: 850; background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 4px;">DATA DE EMISSÃO: ${report.created_at || report.timestamp ? new Date(report.created_at || report.timestamp).toLocaleString() : 'Data N/A'}</div>
@@ -1114,6 +1183,12 @@ const showReportDetails = (id) => {
   if (document.getElementById('modal-sign-btn')) {
     document.getElementById('modal-sign-btn').onclick = () => {
       handleEngineerSign(id);
+      modal.remove();
+    };
+  }
+  if (document.getElementById('modal-reject-btn')) {
+    document.getElementById('modal-reject-btn').onclick = () => {
+      handleEngineerReject(id);
       modal.remove();
     };
   }

@@ -66,6 +66,8 @@ const initDB = async () => {
         } catch (e) { /* ignore if already renamed or doesn't exist */ }
         try {
             await pool.query(`ALTER TABLE reports ADD COLUMN IF NOT EXISTS signed_by_engineer BOOLEAN DEFAULT FALSE`);
+            await pool.query(`ALTER TABLE reports ADD COLUMN IF NOT EXISTS overall_status TEXT DEFAULT 'PENDING'`);
+            await pool.query(`ALTER TABLE reports ADD COLUMN IF NOT EXISTS engineer_comment TEXT`);
         } catch (e) { }
 
         // Migration: ensure new columns exist for existing tables
@@ -193,8 +195,8 @@ app.post('/api/reports', async (req, res) => {
     try {
         console.log(`Attempting to save report: ${id} for plate: ${plate}`);
         await pool.query(
-            `INSERT INTO reports (id, plate, model, km, owner, cpf, chassi, checks, photos, score, inspector, hash, created_at, signed_by_engineer) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, FALSE)`,
+            `INSERT INTO reports (id, plate, model, km, owner, cpf, chassi, checks, photos, score, inspector, hash, created_at, signed_by_engineer, overall_status) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, FALSE, 'PENDING')`,
             [id, plate, model, km, owner, cpf, chassi, JSON.stringify(checks), JSON.stringify(photos), JSON.stringify(score), JSON.stringify(inspector), hash, timestamp || new Date().toISOString()]
         );
         console.log(`Report ${id} saved successfully`);
@@ -208,10 +210,37 @@ app.post('/api/reports', async (req, res) => {
 app.put('/api/reports/:id/sign', async (req, res) => {
     const { id } = req.params;
     try {
-        await pool.query(`UPDATE reports SET signed_by_engineer = TRUE WHERE id = $1`, [id]);
+        await pool.query(`UPDATE reports SET signed_by_engineer = TRUE, overall_status = 'SIGNED' WHERE id = $1`, [id]);
         res.json({ success: true });
     } catch (err) {
         console.error('Error signing report:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+app.put('/api/reports/:id/reject', async (req, res) => {
+    const { id } = req.params;
+    const { comment } = req.body;
+    try {
+        await pool.query(`UPDATE reports SET overall_status = 'REVISION_REQUESTED', engineer_comment = $1 WHERE id = $2`, [comment, id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error rejecting report:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+app.put('/api/reports/:id', async (req, res) => {
+    const { id } = req.params;
+    const { plate, model, km, owner, cpf, chassi, checks, photos, score, hash } = req.body;
+    try {
+        await pool.query(
+            `UPDATE reports SET plate=$1, model=$2, km=$3, owner=$4, cpf=$5, chassi=$6, checks=$7, photos=$8, score=$9, hash=$10, overall_status='PENDING' WHERE id=$11`,
+            [plate, model, km, owner, cpf, chassi, JSON.stringify(checks), JSON.stringify(photos), JSON.stringify(score), hash, id]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error updating report:', err);
         res.status(500).json({ error: 'Database error' });
     }
 });
