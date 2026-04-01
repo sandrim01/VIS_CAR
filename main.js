@@ -1191,7 +1191,7 @@ const showReportDetails = (id) => {
   const scoreColor = report.score?.status === 'APROVADO' ? '#22c55e' : report.score?.status === 'REPROVADO' ? '#ef4444' : '#eab308';
 
   modal.innerHTML = `
-    <div style="background: white; color: #000; width: 95%; max-width: 1000px; border-radius: var(--radius-lg); padding: 4rem; position: relative; font-family: Inter, sans-serif;">
+    <div id="printable-report" style="background: white; color: #000; width: 95%; max-width: 1000px; border-radius: var(--radius-lg); padding: 4rem; position: relative; font-family: Inter, sans-serif; overflow: hidden;">
       
       <!-- Logo do Laudo -->
       <div style="text-align: center; margin-bottom: 4rem;">
@@ -1350,7 +1350,42 @@ const showReportDetails = (id) => {
   `;
   document.body.appendChild(modal);
   document.getElementById('close-report').onclick = () => modal.remove();
-  document.getElementById('print-pdf-btn').onclick = () => window.print();
+
+  document.getElementById('print-pdf-btn').onclick = () => {
+    const btn = document.getElementById('print-pdf-btn');
+    const closeBtn = document.getElementById('close-report');
+    const signArea = document.getElementById('modal-sign-btn');
+    const rejectArea = document.getElementById('modal-reject-btn');
+
+    // Hide buttons temporarily for capture
+    btn.style.display = 'none';
+    closeBtn.style.display = 'none';
+    if (signArea) signArea.style.display = 'none';
+    if (rejectArea) rejectArea.style.display = 'none';
+
+    const element = document.getElementById('printable-report');
+    const opt = {
+      margin: [10, 5, 10, 5],
+      filename: `LAUDO_${report.plate}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`,
+      image: { type: 'jpeg', quality: 1.0 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true,
+        windowWidth: 1000
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    html2pdf().set(opt).from(element).save().then(() => {
+      // Restore buttons
+      btn.style.display = 'block';
+      closeBtn.style.display = 'flex';
+      if (signArea) signArea.style.display = 'block';
+      if (rejectArea) rejectArea.style.display = 'block';
+    });
+  };
   if (document.getElementById('modal-sign-btn')) {
     document.getElementById('modal-sign-btn').onclick = () => {
       handleEngineerSign(id);
