@@ -1072,8 +1072,8 @@ const showFullInspectionModal = (editId = null) => {
     const inspectorSig = document.getElementById('canvas-inspector').toDataURL();
     const ownerSig = document.getElementById('canvas-owner').toDataURL();
 
-    // Quick heuristic check if canvas is blank (very simple)
-    if (inspectorSig.length < 2000 || ownerSig.length < 2000) {
+    // Lower threshold to 1000 for more sensitivity
+    if (inspectorSig.length < 1000 || ownerSig.length < 1000) {
       alert('As assinaturas digitais são obrigatórias para finalizar o laudo.');
       return;
     }
@@ -1308,14 +1308,18 @@ const showReportDetails = (id) => {
       <!-- Rodapé Pericial de Assinaturas -->
       <div style="margin-top: 5rem; padding-top: 3rem; border-top: 2px solid #000; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;">
           <div style="text-align: center; border-top: 1px solid #000; padding-top: 1.5rem; position: relative;">
-              ${report.signatures?.inspector ? `<img src="${report.signatures.inspector}" style="position: absolute; top: -45px; left: 50%; transform: translateX(-50%); max-height: 90px; mix-blend-mode: multiply; pointer-events: none;">` : ''}
+              ${report.signatures && (typeof report.signatures === 'object' ? report.signatures.inspector : JSON.parse(report.signatures).inspector) ? `
+                <img src="${typeof report.signatures === 'object' ? report.signatures.inspector : JSON.parse(report.signatures).inspector}" style="position: absolute; top: -55px; left: 50%; transform: translateX(-50%); max-height: 110px; mix-blend-mode: multiply; pointer-events: none; z-index: 10;">
+              ` : ''}
               <p style="font-size: 0.6rem; color: #94a3b8; font-weight: 800; margin-bottom: 3rem; text-transform: uppercase;">Assinatura do Vistoriador</p>
               <div style="font-size: 0.8rem; font-weight: 700; color: #000;">${report.inspector?.name || 'Vistoriador N/A'}</div>
               <div style="font-size: 0.6rem; color: #64748b;">ID: ${report.inspector?.id || 'ID N/A'}</div>
           </div>
           
           <div style="text-align: center; border-top: 1px solid #000; padding-top: 1.5rem; position: relative;">
-              ${report.signatures?.owner ? `<img src="${report.signatures.owner}" style="position: absolute; top: -45px; left: 50%; transform: translateX(-50%); max-height: 90px; mix-blend-mode: multiply; pointer-events: none;">` : ''}
+              ${report.signatures && (typeof report.signatures === 'object' ? report.signatures.owner : JSON.parse(report.signatures).owner) ? `
+                <img src="${typeof report.signatures === 'object' ? report.signatures.owner : JSON.parse(report.signatures).owner}" style="position: absolute; top: -55px; left: 50%; transform: translateX(-50%); max-height: 110px; mix-blend-mode: multiply; pointer-events: none; z-index: 10;">
+              ` : ''}
               <p style="font-size: 0.6rem; color: #94a3b8; font-weight: 800; margin-bottom: 3rem; text-transform: uppercase;">Assinatura do Proprietário / Responsável</p>
               <div style="font-size: 0.8rem; font-weight: 700; color: #000;">${report.owner || 'N/A'}</div>
               <div style="font-size: 0.6rem; color: #64748b;">DOC: ${report.cpf ? maskData(report.cpf, 'CPF') : 'N/A'}</div>
