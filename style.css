@@ -853,7 +853,7 @@ body {
     /* Report View (Print/PDF) */
     #printable-report {
         padding: 2rem 1rem !important;
-        width: 100% !important;
+        /* Width is forced to 850px in main.js for PDF capture stability */
         border-radius: 0 !important;
     }
 

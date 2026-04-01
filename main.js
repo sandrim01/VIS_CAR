@@ -1191,7 +1191,7 @@ const showReportDetails = (id) => {
   const scoreColor = report.score?.status === 'APROVADO' ? '#22c55e' : report.score?.status === 'REPROVADO' ? '#ef4444' : '#eab308';
 
   modal.innerHTML = `
-    <div id="printable-report" style="background: white; color: #000; width: 850px; min-height: 297mm; padding: 50px; position: relative; font-family: Inter, sans-serif; margin: 0 auto; box-sizing: border-box;">
+    <div id="printable-report" style="background: white; color: #000; width: 850px; min-width: 850px; min-height: 297mm; padding: 50px; position: relative; font-family: Inter, sans-serif; margin: 0 auto; box-sizing: border-box;">
       
       <!-- Logo do Laudo -->
       <div style="text-align: center; margin-bottom: 4rem;">
