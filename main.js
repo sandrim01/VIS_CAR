@@ -860,7 +860,10 @@ const showFullInspectionModal = (editId = null) => {
                   <li><i class="fas fa-check-circle" style="color: var(--success);"></i> Checklist técnico concluído</li>
                   <li><i class="fas fa-check-circle" style="color: var(--success);"></i> Assinatura digital pronta</li>
                 </ul>
-             </div>
+                <div style="margin-top: 1.5rem; text-align: center; background: rgba(99,102,241,0.05); padding: 1rem; border-radius: 8px;">
+                   <p style="font-size: 0.8rem; font-weight: 800; color: var(--accent); margin: 0;"><i class="fas fa-arrow-right"></i> CLIQUE EM "PRÓXIMO PASSO" PARA ASSINAR NO TABLET</p>
+                </div>
+              </div>
           </div>
           <!-- Passo 5: Assinaturas -->
           <div class="step-content" data-step="5">
