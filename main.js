@@ -1393,12 +1393,9 @@ const showReportDetails = (id) => {
       filename: `LAUDO_${report.plate || 'VISTORIA'}_${new Date().getTime()}.pdf`,
       image: { type: 'jpeg', quality: 1.0 },
       html2canvas: {
-        scale: 2,
+        scale: 2, // High resolution capture
         useCORS: true,
-        letterRendering: true,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: 1200 // Ensures any desktop layout applies even if window is smaller
+        letterRendering: true
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
