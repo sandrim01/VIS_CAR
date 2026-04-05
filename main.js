@@ -1369,52 +1369,67 @@ const showReportDetails = (id) => {
     btn.disabled = true;
 
     const element = document.getElementById('printable-report');
+    const overlay = document.querySelector('.modal-overlay');
 
-    // Create a pristine, live clone attached directly to the body
-    // This entirely bypasses the user's modal overlay centering and responsive media queries
-    // while ensuring html2canvas can read standard live DOM metrics (fixing the blank PDF bug).
-    const clone = element.cloneNode(true);
-    clone.id = 'temp-pdf-clone';
-    clone.style.position = 'absolute';
-    clone.style.top = '0';
-    clone.style.left = '0';
-    clone.style.margin = '0';
-    clone.style.transform = 'none';
-    clone.style.width = '850px';
-    clone.style.minWidth = '850px';
-    clone.style.maxWidth = '850px';
-    clone.style.backgroundColor = 'white';
-    clone.style.zIndex = '-9999';
+    // Save state
+    const prevJustify = overlay ? overlay.style.justifyContent : '';
+    const prevAlign = overlay ? overlay.style.alignItems : '';
+    const prevPadding = overlay ? overlay.style.padding : '';
+    const prevMargin = element.style.margin;
 
-    document.body.appendChild(clone);
+    // Shift layout rigidly to top-left (0,0) to prevent html2canvas bounds calculation from clipping or missing the element entirely
+    if (overlay) {
+      overlay.style.justifyContent = 'flex-start';
+      overlay.style.alignItems = 'flex-start';
+      overlay.style.padding = '0';
+      overlay.scrollTop = 0;
+      overlay.scrollLeft = 0;
+    }
+    element.style.margin = '0';
+    window.scrollTo(0, 0);
 
     const opt = {
-      margin: 10, // 1cm margin all around the A4 page
+      margin: 10,
       filename: `LAUDO_${report.plate || 'VISTORIA'}_${new Date().getTime()}.pdf`,
       image: { type: 'jpeg', quality: 1.0 },
       html2canvas: {
         scale: 2,
         useCORS: true,
         letterRendering: true,
-        width: 850,
-        windowWidth: 1200 // Force generic desktop layout sizing bounds
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: 1200 // Ensures any desktop layout applies even if window is smaller
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    // Allow the browser a tiny window to paint the clone so dimensions are calculable
+    // Need a tiny tick to let the browser process the coordinate shift before painting the canvas
     setTimeout(() => {
-      html2pdf().set(opt).from(clone).save().then(() => {
+      html2pdf().set(opt).from(element).save().then(() => {
+        // Restore original layout instantly
+        if (overlay) {
+          overlay.style.justifyContent = prevJustify;
+          overlay.style.alignItems = prevAlign;
+          overlay.style.padding = prevPadding;
+        }
+        element.style.margin = prevMargin;
+
         btn.innerHTML = originalBtn;
         btn.disabled = false;
         [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
-        if (clone) clone.remove();
       }).catch(err => {
         console.error('Erro na exportação:', err);
+        // Restore original layout instantly
+        if (overlay) {
+          overlay.style.justifyContent = prevJustify;
+          overlay.style.alignItems = prevAlign;
+          overlay.style.padding = prevPadding;
+        }
+        element.style.margin = prevMargin;
+
         btn.innerHTML = 'ERRO AO GERAR';
         btn.disabled = false;
         [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
-        if (clone) clone.remove();
       });
     }, 150);
   };
