@@ -1368,73 +1368,86 @@ const showReportDetails = (id) => {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> GERANDO PDF...';
     btn.disabled = true;
 
-    // --- RENOVAÇÃO TOTAL DO SISTEMA DE EXPORTAÇÃO PDF ---
-    // Criação de um ambiente de captura isolado e limpo, livre de bugs de CSS e Modal "Overlay"
+    // --- A SOLUÇÃO MÁXIMA DA RENDERIZAÇÃO ISOLADA ---
+    // Em vez de clones invisíveis, escondemos todo o site, 
+    // ancoramos visualmente o laudo e fotografamos.
 
-    // 1. Salvar o estado do Body e liberá-lo para que a altura total do laudo não seja "cortada" (clipped) no PDF
-    const originalBodyOverflow = document.body.style.overflow;
-    const originalBodyHeight = document.body.style.height;
-    document.body.style.overflow = 'visible';
+    const wrapper = document.getElementById('pdf-export-master-container'); // caso tenha ficado preso do clique passado
+    if (wrapper) wrapper.remove();
+
+    // 1. Esconder todos os filhos do Body temporariamente (menos Scripts e Styles)
+    const rootChildren = Array.from(document.body.children);
+    const hiddenElements = [];
+    rootChildren.forEach(child => {
+      if (child.tagName !== 'SCRIPT' && child.tagName !== 'STYLE' && child.style.display !== 'none') {
+        hiddenElements.push({ element: child, display: child.style.display });
+        child.style.display = 'none';
+      }
+    });
+
+    // 2. Extrair o Laudo do Modal (isso arranca as propriedades flex de tela e max-width do mobile)
+    const report = document.getElementById('printable-report');
+    if (!report) {
+      console.error('Report element not found!');
+      return;
+    }
+    const originalParent = report.parentElement;
+
+    // Jogar nativamente no Body
+    document.body.appendChild(report);
+
+    // 3. Limpar centralização
+    const prevMargin = report.style.margin;
+    report.style.margin = '0';
+    document.body.style.overflow = 'visible'; // Libera a barra de rolagem geral
     document.body.style.height = 'auto';
 
-    // 2. Criar Container Master - visível por cima de tudo no topo esquerdo absoluto (0,0)
-    const masterContainer = document.createElement('div');
-    masterContainer.id = 'pdf-export-master-container';
-    masterContainer.style.cssText = 'position: absolute; top: 0; left: 0; width: 850px; min-width: 850px; background: white; z-index: 999999; margin: 0; padding: 0; display: block;';
+    window.scrollTo(0, 0);
 
-    // 3. Clonar e limpar o relatorio
-    const originalReport = document.getElementById('printable-report');
-    const reportClone = originalReport.cloneNode(true);
-    reportClone.id = 'pdf-report-clone';
-    reportClone.style.margin = '0'; // Força a ancoragem à esquerda sem centralização
-    reportClone.style.transform = 'none';
-    reportClone.style.width = '850px';
-
-    // Anexar no container master e jogar no Body nativo do HTML
-    masterContainer.appendChild(reportClone);
-    document.body.appendChild(masterContainer);
-
-    // 4. Configurar PDF para tamanho folha A4 com proporção de escala da div de 850px
+    // 4. Executar ferramenta PDF de forma natural e limpa
     const opt = {
-      margin: [10, 0, 10, 0], // Margens de 10mm (Topo/Baixo), 0mm (Laterais). A esquerda/direita são controladas pela div de 850px.
+      margin: [10, 0, 10, 0],
       filename: `LAUDO_${report.plate || 'VISTORIA'}_${new Date().getTime()}.pdf`,
       image: { type: 'jpeg', quality: 1.0 },
       html2canvas: {
-        scale: 2,           // Alta resolução
-        useCORS: true,      // Permite carregar imagens base64/externas
+        scale: 2,
+        useCORS: true,
         letterRendering: true,
-        width: 850,         // Força captura de exatamente 850 colunas de pixel
-        x: 0,
-        y: 0,
-        scrollX: 0,
-        scrollY: 0
+        windowWidth: 1200 // Opcional, previne stacking responsivo caso alguém insista em tela minimizada
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    // 5. Iniciar Renderização Dando tempo pro navegador registrar as imagens no Container Master
     setTimeout(() => {
-      html2pdf().set(opt).from(masterContainer).save().then(() => {
-        // Restauração de Sucesso
-        document.body.style.overflow = originalBodyOverflow;
-        document.body.style.height = originalBodyHeight;
-        masterContainer.remove();
+      html2pdf().set(opt).from(report).save().then(() => {
+        // Restore Original State
+        originalParent.appendChild(report); // Volta pro modal
+        report.style.margin = prevMargin;
+
+        // Restaura visualizacao
+        hiddenElements.forEach(item => {
+          item.element.style.display = item.display;
+        });
+        document.body.style.overflow = 'hidden';
 
         btn.innerHTML = originalBtn;
         btn.disabled = false;
         [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
-      }).catch(err => {
-        console.error('Falha Criítica:', err);
-        // Restauração de Falha
-        document.body.style.overflow = originalBodyOverflow;
-        document.body.style.height = originalBodyHeight;
-        masterContainer.remove();
 
-        btn.innerHTML = 'ERRO AO GERAR';
+      }).catch(err => {
+        console.error('Falha Grave na Geração:', err);
+        originalParent.appendChild(report);
+        report.style.margin = prevMargin;
+        hiddenElements.forEach(item => {
+          item.element.style.display = item.display;
+        });
+        document.body.style.overflow = 'hidden';
+
+        btn.innerHTML = 'ERRO DE PDF';
         btn.disabled = false;
         [btn, closeBtn, signArea, rejectArea, govBtn].forEach(el => { if (el) el.style.visibility = 'visible'; });
       });
-    }, 400); // 400ms para garantir paint da tela
+    }, 250);
   };
   if (document.getElementById('modal-sign-btn')) {
     document.getElementById('modal-sign-btn').onclick = () => {
